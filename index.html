@@ -1,0 +1,3401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hype Train Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Montserrat:wght@400;700&display=swap">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --dark-bg: #0f0f14;
+            --card-bg: rgba(26, 26, 31, 0.95);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --hype-purple: #9146ff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.1) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 15, 20, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            z-index: 1000;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo .icon {
+            margin-right: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--text-primary);
+        }
+
+        /* Social Icons in Navbar */
+        .navbar-social-icons {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            /* Spacing between icons themselves */
+        }
+
+        .social-icon-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            background-color: transparent;
+            border: 1px solid transparent;
+            text-decoration: none;
+            font-size: 1.1rem;
+            /* Icon size */
+            transition: all 0.3s ease;
+        }
+
+        .social-icon-button:hover {
+            color: var(--text-primary);
+            /* General hover color, platform specific will override text */
+            transform: translateY(-2px);
+        }
+
+        /* Platform-specific colors on hover */
+        .social-icon-button.twitch:hover {
+            background-color: #9146ff;
+            color: white;
+            border-color: #9146ff;
+        }
+        .social-icon-button.kick:hover {
+            background-color: #53fc18; /* Kick green */
+            color: black;
+            border-color: #53fc18;
+        }
+        .social-icon-button.youtube:hover {
+            background-color: #ff0000;
+            color: white;
+            border-color: #ff0000;
+        }
+        .social-icon-button.tiktok:hover {
+            background-color: #010101; /* TikTok often uses black */
+            color: white;
+            border-color: #010101;
+        }
+        .social-icon-button.x-twitter:hover {
+            background-color: #000000; /* X is black */
+            color: white;
+            border-color: #000000;
+        }
+        .social-icon-button.kofi:hover {
+            background-color: #FF5E5B; /* Ko-fi red */
+            color: white;
+            border-color: #FF5E5B;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 80px;
+            padding: 2rem;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+            flex: 1;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* Dashboard/Controls View */
+        .control-overview {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .control-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .connection-status-centered {
+            display: flex;
+            justify-content: center;
+            margin: 1rem 0;
+            padding: 0.75rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+        }
+
+        .status-indicator.connected {
+            background: var(--success);
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-hype {
+            background: linear-gradient(135deg, var(--hype-purple) 0%, #772ce8 100%);
+            color: white;
+        }
+
+        .btn-hype:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(145, 70, 255, 0.3);
+        }
+
+        /* Settings View */
+        .settings-panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .setting-group {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .setting-group h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-control select,
+        select.form-control {
+            color: #000000 !important;
+            background: rgba(255, 255, 255, 0.95) !important;
+        }
+
+        .range-display {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .range-display input[type="range"] {
+            flex: 1;
+        }
+
+        .range-value {
+            background: var(--glass-bg);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            min-width: 60px;
+            text-align: center;
+            color: var(--hype-purple);
+            font-weight: 600;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .color-input {
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* Preview Section */
+        .preview-section {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .preview-container {
+            background: black;
+            border-radius: 10px;
+            padding: 15px;
+            position: relative;
+            overflow: hidden;
+            width: 200px;
+            height: 356px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto;
+        }
+
+        .preview-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            transition: all 0.3s ease;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .preview-content {
+            position: relative;
+            z-index: 2;
+            color: white;
+            text-align: center;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Changed from space-around */
+            align-items: center;    /* Added for consistency */
+            padding: 0;             /* Removed padding, preview-container handles it */
+        }
+
+        .preview-train-header {
+            text-align: center;
+        }
+
+        .preview-train-icon {
+            font-size: 2em;
+            /* margin-bottom: 5px; Scaled margin will be handled by JS or relative to font size */
+            margin-bottom: var(--preview-scaled-icon-margin, 5px);
+            animation: bounce 1s ease-in-out infinite alternate;
+        }
+
+        .preview-title {
+            font-size: 1.2em;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: var(--preview-scaled-title-margin, 5px);
+        }
+
+        .preview-subtitle {
+            font-size: 1em;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            opacity: 0.9;
+            /* No explicit margin here, follows title */
+        }
+
+        .preview-level-section {
+            text-align: center;
+            /* margin: 10px 0; Scaled margin will be handled by JS or relative to font size */
+            margin: var(--preview-scaled-level-margin-vertical, 10px) 0;
+        }
+
+        .preview-level {
+            font-size: 1.8em;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            font-weight: bold;
+        }
+
+        .preview-time-section {
+            text-align: center;
+            margin-top: var(--preview-scaled-time-margin-top, 10px);
+        }
+
+        .preview-time {
+            font-size: 1.4em;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            font-weight: bold;
+        }
+
+        .preview-progress-text {
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2em;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 3;
+        }
+
+        /* Overlay View Styles */
+        body.overlay-only {
+            width: 1080px;
+            height: 1920px;
+            background: transparent !important;
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+        }
+
+        body.overlay-only::before {
+            display: none !important;
+        }
+
+        body.overlay-only .navbar,
+        body.overlay-only #dashboard,
+        body.overlay-only #settings,
+        body.overlay-only #debug {
+            display: none !important;
+        }
+
+        body.overlay-only #overlay {
+            display: block !important;
+        }
+
+        body.overlay-only .main-content {
+            margin-top: 0 !important;
+            padding: 0 !important;
+            max-width: none !important;
+            width: 100% !important;
+            height: 100vh !important;
+        }
+
+        /* Hype Train Overlay Styles */
+        .hype-train-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 100px 80px;
+            background: rgba(10, 10, 15, var(--hype-bg-opacity, 0.75)); /* Darker semi-transparent background with variable opacity */
+            backdrop-filter: blur(10px);      /* Blurred glass effect */
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .purple-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            background: linear-gradient(180deg,
+                    var(--hype-color-1, #a970ff) 0%,
+                    var(--hype-color-2, #9146ff) 50%,
+                    var(--hype-color-3, #772ce8) 100%);
+            transition: height 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            z-index: 1;
+        }
+        
+        .hype-train-end-message-container {
+            position: absolute;
+            top: 50%;
+            left: 0; /* Changed for full width */
+            width: 100%; /* Take full width of parent */
+            height: 100%; /* Take full height of parent */
+            transform: translateY(-50%); /* Center vertically */
+            /* background: rgba(0, 0, 0, 0.75); Removed background box */
+            /* padding: 20px; Removed padding */
+            /* border-radius: 15px; Removed border-radius */
+            text-align: center;
+            z-index: 25; /* Above most content, but potentially below main progress % */
+            opacity: 0;
+            display: none;
+            transition: opacity 0.5s ease-in-out;
+            /* max-width: 90%; Removed to allow full screen */
+            display: flex; /* For centering text */
+            align-items: center; /* For centering text */
+            justify-content: center; /* For centering text */
+        }
+
+.hype-train-end-message-text {
+            font-size: var(--hype-end-message-size, 60px);
+            color: var(--hype-font-color, white);
+            font-family: var(--hype-font-family, 'American Captain', sans-serif);
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        /*.purple-fill.active {
+            /* animation: pulse 1.2s ease-out infinite alternate; */ /* Removed pulsing effect */
+        
+
+        .train-header {
+            text-align: center;
+            transition: opacity 0.5s ease-out; /* Added for fade out */
+            margin-bottom: 60px;
+        }
+
+        .train-icon {
+            font-size: var(--hype-train-icon-size, 220px);
+            margin-bottom: 40px;
+            animation: bounce 1s ease-in-out infinite alternate;
+            color: var(--hype-font-color, white);
+            text-shadow: 0 5px 10px rgba(0, 0, 0, 0.6);
+        }
+
+        @keyframes bounce {
+            0% {
+                transform: translateY(0px);
+            }
+
+            100% {
+                transform: translateY(-20px);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.8;
+            }
+        }
+
+        .train-title {
+            font-size: var(--hype-title-size, 100px);
+            font-weight: normal;
+            color: var(--hype-font-color, white);
+            text-shadow: 0 8px 15px rgba(0, 0, 0, 0.7);
+            margin-bottom: 40px;
+            letter-spacing: 6px;
+            font-family: var(--hype-font-family, 'American Captain', sans-serif);
+        }
+
+        .train-subtitle {
+            font-size: var(--hype-subtitle-size, 80px);
+            font-weight: normal;
+            color: var(--hype-font-color, rgba(255, 255, 255, 0.9));
+            text-shadow: 0 5px 10px rgba(0, 0, 0, 0.6);
+            font-family: var(--hype-font-family, 'American Captain', sans-serif);
+        }
+
+        .level-display {
+            background: transparent;
+            border-radius: 70px;
+            padding: 60px 120px;
+            margin-bottom: 100px;
+            text-align: center;
+        }
+
+        .level-text {
+            font-size: var(--hype-level-size, 220px);
+            font-weight: normal;
+            color: var(--hype-font-color, white);
+            text-shadow: 0 8px 15px rgba(0, 0, 0, 0.7);
+            margin-bottom: 0px;
+            font-family: var(--hype-font-family, 'American Captain', sans-serif);
+        }
+
+        .level-number {
+            font-size: var(--hype-level-size, 220px);
+            font-weight: normal;
+            color: var(--hype-font-color, white);
+            text-shadow: 0 8px 15px rgba(0, 0, 0, 0.7);
+            font-family: var(--hype-font-family, 'American Captain', sans-serif);
+        }
+
+        .train-header,
+        .level-display,
+        .stats-section {
+            position: relative; /* Ensure stacking context for z-index */
+            transition: opacity 0.5s ease-out; /* Added for fade out */
+            z-index: 2;         /* Above purple-fill */
+        }
+        /* These will be directly manipulated by JS for the main overlay */
+        /* .train-header, .level-display, .stats-section {
+            transform: translateY(0px); 
+        } */
+
+        .progress-text {
+            font-size: var(--hype-progress-size, 380px);
+            font-weight: normal;
+            color: var(--hype-font-color, white);
+            text-shadow: 0 10px 20px rgba(0, 0, 0, 0.75);
+            position: absolute;
+            top: var(--hype-progress-text-top, 1%);
+            /* Use CSS variable for top position */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            font-family: var(--hype-font-family, 'American Captain', sans-serif);
+        }
+
+        .stats-section {
+            display: flex;
+            flex-direction: column;
+            /* Ensure label and value stack if needed */
+            transition: opacity 0.5s ease-out; /* Added for fade out */
+            justify-content: center;
+        }
+
+        .time-remaining-display {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: var(--hype-time-size, 180px);
+            font-weight: normal;
+            color: var(--hype-font-color, white);
+            text-shadow: 0 6px 12px rgba(0, 0, 0, 0.7);
+            margin-bottom: 0;
+            font-family: var(--hype-font-family, 'American Captain', sans-serif);
+        }
+
+        .stat-label {
+            font-size: 100px;
+            font-weight: normal;
+            color: var(--hype-font-color, rgba(255, 255, 255, 0.9));
+            text-shadow: 0 5px 8px rgba(0, 0, 0, 0.6);
+            font-family: var(--hype-font-family, 'American Captain', sans-serif);
+        }
+
+        /* URL Generation */
+        .url-section {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .url-input {
+            width: 100%;
+            height: 120px;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            resize: vertical;
+        }
+
+        /* Debug */
+        .debug-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .debug-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .debug-message {
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+            word-wrap: break-word;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            max-width: 350px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-color: var(--success);
+        }
+
+        .notification.warning {
+            border-color: var(--warning);
+        }
+
+        .notification.error {
+            border-color: var(--danger);
+        }
+
+        /* Footer */
+        .app-footer {
+            background: rgba(15, 15, 20, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem 2rem;
+            margin-top: auto;
+            position: relative;
+            z-index: 500;
+        }
+
+        body.overlay-only .app-footer {
+            display: none !important;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .footer-heart {
+            color: #ff6b6b;
+            animation: heartbeat 1.5s ease-in-out infinite;
+            font-size: 0.9rem;
+        }
+
+        @keyframes heartbeat {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* Footer Styles from StreamGoals */
+        .app-footer {
+            background: rgba(15, 15, 20, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem 2rem;
+            margin-top: auto;
+            position: relative;
+            z-index: 500;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .footer-author { /* Added from StreamGoals for MetalBenji styling */
+            color: var(--text-primary);
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .footer-heart {
+            color: #ff6b6b;
+            animation: heartbeat 1.5s ease-in-out infinite;
+            font-size: 0.9rem;
+        }
+
+        .footer-links { /* Added from StreamGoals */
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .footer-version { /* Added from StreamGoals */
+            background: var(--glass-bg);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            font-weight: 500;
+        }
+
+        .footer-separator { /* Added from StreamGoals */
+            opacity: 0.5;
+        }
+
+        .footer-tech { /* Added from StreamGoals */
+            font-style: italic;
+            opacity: 0.8;
+        }
+
+        /* Hide overlay only content in dashboard mode */
+        body:not(.overlay-only) .hype-train-container {
+            display: none;
+        }
+
+        body:not(.overlay-only) .purple-fill {
+            display: none;
+        }
+
+        body:not(.overlay-only) .progress-text {
+            display: none;
+        }
+
+        /* Ensure overlay elements are visible in overlay mode */
+        body.overlay-only .hype-train-container {
+            display: flex !important;
+            /* Layout type when visible */
+            /* opacity is controlled by JS, starts at 0 from base .hype-train-container style */
+        }
+
+        body.overlay-only .purple-fill {
+            display: block !important;
+            /* Layout type when visible */
+        }
+
+        body.overlay-only .progress-text {
+            display: block !important;
+            /* Layout type when visible */
+            /* opacity is controlled by JS, starts at 0 from base .progress-text style */
+        }
+
+        /* Debug overlay visibility in overlay mode */
+        body.overlay-only #obsDebugOverlay {
+            z-index: 2000 !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 1rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .nav-links { display: none; }
+            .settings-grid { grid-template-columns: 1fr; }
+            .controls-grid { grid-template-columns: 1fr; }
+
+            /* Mobile footer from StreamGoals */
+            .app-footer { padding: 1rem; text-align: center; }
+            .footer-content { flex-direction: column; gap: 0.5rem; }
+            .footer-text { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="logo">
+                <i class="fas fa-train icon"></i>
+                Hype Train Manager
+            </div>
+            <div class="nav-links">
+                <a href="#" class="nav-link active" onclick="showView('dashboard')">Dashboard</a>
+                <a href="#" class="nav-link" onclick="showView('settings')">Settings</a>
+                <a href="#" class="nav-link" onclick="showView('debug')">Debug</a>
+                <!-- Social Media Icons -->
+                <div class="navbar-social-icons">
+                    <a href="https://www.twitch.tv/metalbenji" target="_blank" class="social-icon-button twitch"
+                        aria-label="Twitch">
+                        <i class="fab fa-twitch"></i>
+                    </a>
+                    <a href="https://kick.com/metalbenji" target="_blank" class="social-icon-button kick"
+                        aria-label="Kick">
+                        <i class="fas fa-k"></i> <!-- Using 'fas fa-k' for Kick as there's no official FA icon -->
+                    </a>
+                    <a href="https://www.youtube.com/@metalbenji" target="_blank" class="social-icon-button youtube"
+                        aria-label="YouTube">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                    <a href="https://www.tiktok.com/@metalbenjigaming" target="_blank" class="social-icon-button tiktok"
+                        aria-label="TikTok">
+                        <i class="fab fa-tiktok"></i>
+                    </a>
+                    <a href="https://x.com/MetalBenji" target="_blank" class="social-icon-button x-twitter"
+                        aria-label="X (formerly Twitter)">
+                        <i class="fab fa-x-twitter"></i>
+                    </a>
+                    <a href="https://ko-fi.com/metalbenji" target="_blank" class="social-icon-button kofi"
+                        aria-label="Buy me a beer">
+                        <i class="fas fa-beer"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Dashboard View -->
+        <div id="dashboard" class="view active">
+            <div class="control-overview">
+                <div class="control-header">
+                    <h2 class="control-title">Hype Train Controls</h2>
+                </div>
+
+                <div class="controls-grid">
+                    <button class="btn btn-primary" onclick="connectStreamerBot()">
+                        <i class="fas fa-plug"></i>
+                        Connect to Streamer.bot
+                    </button>
+                    <button class="btn btn-hype" onclick="testHypeTrain()">
+                        <i class="fas fa-train"></i>
+                        Test Hype Train
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetHypeTrain()">
+                        <i class="fas fa-refresh"></i>
+                        Reset
+                    </button>
+                    <button class="btn btn-secondary" onclick="testConnection()">
+                        <i class="fas fa-network-wired"></i>
+                        Test Connection
+                    </button>
+                </div>
+
+                <div class="connection-status-centered">
+                    <div class="connection-status">
+                        <div class="status-indicator" id="statusIndicator"></div>
+                        <span id="connectionStatusText">Disconnected</span>
+                    </div>
+                </div>
+
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label
+                            style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500; color: var(--text-secondary);">Server
+                            IP</label>
+                        <input type="text" id="serverIP" class="form-control" value="192.168.1.19" 
+                            style="margin-bottom: 0;">
+                    </div>
+                    <div>
+                        <label
+                            style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500; color: var(--text-secondary);">WebSocket
+                            Port</label>
+                        <input type="text" id="serverPort" class="form-control" value="9090" style="margin-bottom: 0;">
+                    </div>
+                </div>
+
+                <div id="hypeTrainStatus"
+                    style="background: var(--glass-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-top: 1rem;">
+                    <h4 style="margin-bottom: 0.5rem;">Hype Train Status</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                        <div>
+                            <span style="color: var(--text-secondary);">Active:</span>
+                            <span id="hypeTrain-active" style="color: var(--text-primary);">No</span>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-secondary);">Level:</span>
+                            <span id="hypeTrain-level" style="color: var(--text-primary);">-</span>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-secondary);">Progress:</span>
+                            <span id="hypeTrain-progress" style="color: var(--text-primary);">-</span>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-secondary);">Time Left:</span>
+                            <span id="hypeTrain-time" style="color: var(--text-primary);">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings View -->
+        <div id="settings" class="view">
+            <div class="settings-panel">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="margin: 0;">Hype Train Settings</h2>
+                    <button class="btn btn-primary" onclick="saveSettings()">
+                        <i class="fas fa-save"></i>
+                        Save Settings
+                    </button>
+                </div>
+
+                <!-- Preview Section -->
+                <div class="preview-section">
+                    <h4 style="margin-bottom: 1rem; text-align: center;">Live Previews</h4>
+                    <div style="display: flex; justify-content: space-around; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;">
+                        <!-- Main Hype Train Preview -->
+                        <div style="flex-basis: 200px; display: flex; flex-direction: column; align-items: center;">
+                            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Main Overlay</p>
+                            <div class="preview-container">
+                                <div class="preview-fill" id="previewFill"></div>
+                                <div class="preview-content">
+                                    <div class="preview-train-header">
+                                        <div class="preview-train-icon" id="previewTrainIcon">🚂</div>
+                                        <div class="preview-title" id="previewTitle">HYPE TRAIN</div>
+                                        <div class="preview-subtitle" id="previewSubtitle">ALL ABOARD!</div>
+                                    </div>
+                                    <div class="preview-level-section">
+                                        <div class="preview-level" id="previewLevel">LEVEL 3</div>
+                                    </div>
+                                    <div class="preview-time-section">
+                                        <div class="preview-time" id="previewTime">2:45</div>
+                                    </div>
+                                </div>
+                                <div class="preview-progress-text" id="previewProgressText">75%</div>
+                            </div>
+                            <div style="text-align: center; margin-top: 1rem;">
+                                <button class="btn btn-secondary" onclick="animatePreview()" style="font-size: 0.8rem;">
+                                    <i class="fas fa-play"></i>
+                                    Test Animation
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- End Message Preview -->
+                        <div style="flex-basis: 200px; display: flex; flex-direction: column; align-items: center;">
+                            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;">End Message</p>
+                            <div class="preview-container" id="endMessagePreviewContainer" style="height: 356px; background: black;">
+                                <div class="preview-content" style="justify-content: center; align-items: center; text-align: center; padding: 15px; overflow-y: auto;">
+                                    <p id="endMessagePreviewText" style="word-break: break-word; line-height: 1.3;"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="margin-top: 1.5rem; color: var(--text-secondary); font-size: 0.8rem; text-align: center;">
+                        💡 Changes to settings update this preview in real-time
+                    </p>
+                </div>
+
+                <!-- Appearance Settings -->
+                <div class="setting-group">
+                    <h4>🎨 Appearance Settings</h4>
+                    <div class="form-group">
+                        <label for="backgroundOpacity">Background Opacity</label>
+                        <div class="range-display">
+                            <input type="range" id="backgroundOpacity" min="0" max="100" value="75" class="form-control">
+                            <span class="range-value" id="backgroundOpacityValue">75%</span>
+                        </div>
+                        <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                            Adjusts the opacity of the main overlay background.
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="hypeTrainEndMessage">Hype Train End Message</label>
+                        <input type="text" id="hypeTrainEndMessage" class="form-control" value="Thanks for the Hype!">
+                        <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                            Message displayed when the Hype Train ends (remains on screen).
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="endMessageSize">End Message Font Size</label>
+                        <div class="range-display">
+                            <input type="range" id="endMessageSize" min="20" max="800" value="60"
+                                class="form-control">
+                            <span class="range-value" id="endMessageSizeValue">60px</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-grid">
+                    <!-- Size Settings -->
+                    <div class="setting-group">
+                        <h4>📏 Size Settings</h4>
+                        <div class="form-group">
+                            <label for="progressSize">Progress Text Size</label>
+                            <div class="range-display">
+                                <input type="range" id="progressSize" min="200" max="600" value="380"
+                                    class="form-control">
+                                <span class="range-value" id="progressSizeValue">380px</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="trainIconSize">Train Icon Size</label>
+                            <div class="range-display">
+                                <input type="range" id="trainIconSize" min="100" max="400" value="220"
+                                    class="form-control">
+                                <span class="range-value" id="trainIconSizeValue">220px</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="titleSize">Title Size (HYPE TRAIN)</label>
+                            <div class="range-display">
+                                <input type="range" id="titleSize" min="50" max="200" value="100" class="form-control">
+                                <span class="range-value" id="titleSizeValue">100px</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="subtitleSize">Subtitle Size (ALL ABOARD!)</label>
+                            <div class="range-display">
+                                <input type="range" id="subtitleSize" min="40" max="160" value="80"
+                                    class="form-control">
+                                <span class="range-value" id="subtitleSizeValue">80px</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="levelSize">Level Text Size</label>
+                            <div class="range-display">
+                                <input type="range" id="levelSize" min="100" max="400" value="220" class="form-control">
+                                <span class="range-value" id="levelSizeValue">220px</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="timeSize">Time Remaining Size</label>
+                            <div class="range-display">
+                                <input type="range" id="timeSize" min="100" max="300" value="180" class="form-control">
+                                <span class="range-value" id="timeSizeValue">180px</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Position Settings -->
+                    <div class="setting-group">
+                        <h4>↕️ Position Settings</h4>
+                        <div class="form-group">
+                            <label for="progressTextTop">Progress Text Top Position</label>
+                            <div class="range-display">
+                                <input type="range" id="progressTextTop" min="0" max="100" value="1" class="form-control">
+                                <span class="range-value" id="progressTextTopValue">1%</span>
+                            </div>
+                            <small
+                                style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                                Vertical position of the large progress percentage (from top).
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label for="headerOffsetY">Header Offset Y</label>
+                            <div class="range-display">
+                                <input type="range" id="headerOffsetY" min="-800" max="800" value="0" class="form-control">
+                                <span class="range-value" id="headerOffsetYValue">0px</span>
+                            </div>
+                            <small
+                                style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                                Moves the Train Icon, Title, and Subtitle block up/down.
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label for="levelOffsetY">Level Text Offset Y</label>
+                            <div class="range-display">
+                                <input type="range" id="levelOffsetY" min="-800" max="800" value="0" class="form-control">
+                                <span class="range-value" id="levelOffsetYValue">0px</span>
+                            </div>
+                            <small
+                                style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                                Moves the "LEVEL X" block up/down.
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label for="timeOffsetY">Time Remaining Offset Y</label>
+                            <div class="range-display">
+                                <input type="range" id="timeOffsetY" min="-800" max="800" value="0" class="form-control">
+                                <span class="range-value" id="timeOffsetYValue">0px</span>
+                            </div>
+                            <small
+                                style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                                Moves the Time Remaining block up/down.
+                            </small>
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="resetPositionSettings()">
+                            <i class="fas fa-undo"></i>
+                            Reset Positions
+                        </button>
+                    </div>
+
+                    <!-- Font Settings -->
+                    <div class="setting-group">
+                        <h4>🔤 Font Settings</h4>
+                        <div class="form-group">
+                            <label for="fontFamily">Font Family</label>
+                            <select id="fontFamily" class="form-control">
+                                <option value="'American Captain', sans-serif">American Captain (Default)</option>
+                                <option value="'Arial', sans-serif">Arial</option>
+                                <option value="'Helvetica', sans-serif">Helvetica</option>
+                                <option value="'Georgia', serif">Georgia</option>
+                                <option value="'Times New Roman', serif">Times New Roman</option>
+                                <option value="'Courier New', monospace">Courier New</option>
+                                <option value="'Verdana', sans-serif">Verdana</option>
+                                <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+                                <option value="'Impact', sans-serif">Impact</option>
+                                <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+                                <option value="'Oswald', sans-serif">Oswald (Bold)</option>
+                                <option value="'Roboto', sans-serif">Roboto</option>
+                                <option value="'Open Sans', sans-serif">Open Sans</option>
+                                <option value="'Montserrat', sans-serif">Montserrat</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="fontColor">Font Color</label>
+                            <input type="color" id="fontColor" class="form-control color-input" value="#ffffff">
+                        </div>
+                    </div>
+
+                    <!-- Display Settings -->
+                    <div class="setting-group">
+                        <h4>👁️ Display Elements</h4>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" id="showTrainIcon" checked>
+                                <span>Show Train Icon (🚂)</span>
+                            </label>
+                            <small
+                                style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                                Toggle the animated train emoji at the top
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" id="showSubtitle" checked>
+                                <span>Show Subtitle ("ALL ABOARD!")</span>
+                            </label>
+                            <small
+                                style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                                Show the subtitle text below the main title
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" id="showProgressText" checked>
+                                <span>Show Progress Percentage</span>
+                            </label>
+                            <small
+                                style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                                Display the percentage number at the top
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" id="showTimeRemaining" checked>
+                                <span>Show Time Remaining</span>
+                            </label>
+                            <small
+                                style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                                Display countdown timer at the bottom
+                            </small>
+                        </div>
+                    </div>
+                    <div class="setting-group">
+                        <h4>🎨 Progress Bar Colors</h4>
+                        <div class="color-grid">
+                            <div class="form-group">
+                                <label for="progressColor1">Top Color</label>
+                                <input type="color" id="progressColor1" class="form-control color-input"
+                                    value="#a970ff">
+                            </div>
+                            <div class="form-group">
+                                <label for="progressColor2">Middle Color</label>
+                                <input type="color" id="progressColor2" class="form-control color-input"
+                                    value="#9146ff">
+                            </div>
+                            <div class="form-group">
+                                <label for="progressColor3">Bottom Color</label>
+                                <input type="color" id="progressColor3" class="form-control color-input"
+                                    value="#772ce8">
+                            </div>
+                        </div>
+                        <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                            <button type="button" class="btn btn-secondary" onclick="resetColors()">
+                                <i class="fas fa-undo"></i>
+                                Reset Colors
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="randomizeColors()">
+                                <i class="fas fa-random"></i>
+                                Random Colors
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Connection Settings -->
+                    <div class="setting-group">
+                        <h4>🔌 Connection Settings</h4>
+                        <div class="form-group">
+                            <label for="websocketServer">WebSocket Server</label>
+                            <input type="text" id="websocketServer" class="form-control" value="192.168.0.19">
+                        </div>
+                        <div class="form-group">
+                            <label for="websocketPort">WebSocket Port</label>
+                            <input type="text" id="websocketPort" class="form-control" value="8080">
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" id="autoReconnect" checked>
+                                <span>Auto-reconnect in overlay mode</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- URL Generation -->
+                <div class="url-section">
+                    <h4 style="margin-bottom: 1rem;">🔗 Overlay URL Generation</h4>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                        <button class="btn btn-primary" onclick="generateOverlayURL()">
+                            <i class="fas fa-link"></i>
+                            Generate Overlay URL
+                        </button>
+                        <button class="btn btn-secondary" onclick="copyOverlayURL()">
+                            <i class="fas fa-copy"></i>
+                            Copy URL
+                        </button>
+                        <button class="btn btn-secondary" onclick="openOverlayPreview()">
+                            <i class="fas fa-external-link-alt"></i>
+                            Preview
+                        </button>
+                    </div>
+                    <textarea id="overlayURL" class="url-input" readonly
+                        placeholder="Click 'Generate Overlay URL' to create a URL for OBS Browser Source"></textarea>
+                    <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.85rem;">
+                        💡 Use this URL in OBS as a Browser Source. Recommended size: 1080x1920 for vertical layouts.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Debug View -->
+        <div id="debug" class="view">
+            <div class="settings-panel">
+                <h2 style="margin-bottom: 1.5rem;">Debug Console</h2>
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                    <button class="btn btn-secondary" onclick="clearDebugLog()">
+                        <i class="fas fa-trash"></i>
+                        Clear Log
+                    </button>
+                    <button class="btn btn-primary" onclick="sendTestMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                        Get Events
+                    </button>
+                    <button class="btn btn-hype" onclick="testHypeTrain()">
+                        <i class="fas fa-train"></i>
+                        Test Hype Train
+                    </button>
+                    <button class="btn btn-secondary" onclick="debugSettings()">
+                        <i class="fas fa-cog"></i>
+                        Debug Settings
+                    </button>
+                    <button class="btn btn-primary" onclick="debugSettingsFlow()">
+                        <i class="fas fa-search"></i>
+                        Debug Flow
+                    </button>
+                </div>
+                <div class="debug-panel">
+                    <div class="debug-title">Message Log:</div>
+                    <div id="debugMessages"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Hype Train Overlay Elements (for overlay-only mode) -->
+    <div class="progress-text" id="progressText">0%</div>
+    <div class="hype-train-container" id="hypeTrainContainer">
+        <div class="purple-fill" id="purpleFill"></div> <!-- Moved inside hypeTrainContainer -->
+        <div class="train-header">
+            <div class="train-icon">🚂</div>
+            <div class="train-title" id="trainTitle">HYPE TRAIN</div>
+            <div class="train-subtitle" id="trainSubtitle">ALL ABOARD!</div>
+        </div>
+        <div class="level-display">
+            <div class="level-text">LEVEL <span class="level-number" id="levelNumber">1</span></div>
+        </div>
+        <div class="stats-section">
+            <div class="time-remaining-display">
+                <div class="stat-value" id="timeRemaining">0:00</div>
+            </div>
+        </div>
+        <!-- End Message Container -->
+        <div class="hype-train-end-message-container" id="hypeTrainEndMessageContainer">
+            <p class="hype-train-end-message-text" id="hypeTrainEndMessageText"></p>
+        </div>
+    </div>
+
+    <!-- Debug overlay for OBS troubleshooting -->
+    <div id="obsDebugOverlay"
+        style="position: fixed; top: 10px; left: 10px; background: rgba(0, 0, 0, 0.8); color: #fff; padding: 8px; border-radius: 4px; font-family: monospace; font-size: 10px; z-index: 1000; max-width: 200px; word-wrap: break-word; display: none;">
+        <strong>DEBUG INFO:</strong><br>
+        <span id="obsDebugInfo"></span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-content">
+            <span class="footer-text">
+                Made with <i class="fas fa-heart footer-heart"></i> by
+                <strong class="footer-author">MetalBenji</strong>
+            </span>
+            <div class="footer-links">
+                <span class="footer-version">HypeTrain Manager v1.0</span>
+                <span class="footer-separator">•</span>
+                <span class="footer-tech" id="randomFooterMessage">Powered by JavaScript & CSS Magic</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Application State
+        const defaultSettings = {
+            fontFamily: "'American Captain', sans-serif",
+            titleSize: 100,
+            subtitleSize: 80,
+            levelSize: 220,
+            progressSize: 380,
+            timeSize: 180,
+            trainIconSize: 220,
+            fontColor: '#ffffff',
+            progressColor1: '#a970ff',
+            progressColor2: '#9146ff', // Twitch Purple
+            progressColor3: '#772ce8', // Darker Twitch Purple
+            websocketServer: '192.168.0.19', // Default IP
+            websocketPort: '8080',       // Default Port
+            autoReconnect: true,
+            showTrainIcon: true,
+            showSubtitle: true,
+            showProgressText: true,
+            showTimeRemaining: true,
+            // New position settings
+            headerOffsetY: 0,
+            levelOffsetY: 0,
+            timeOffsetY: 0,
+            progressTextTop: 1, // Default to 1%
+            backgroundOpacity: 0.75, // Default background opacity
+            hypeTrainEndMessage: "Thanks for the Hype!", // Default end message
+            endMessageSize: 60 // Default end message font size
+        };
+
+        let currentSettings = { ...defaultSettings };
+        let isOverlayMode = false;
+        let websocketConnection = null;
+        let settingsChannel = null; // BroadcastChannel for live updates
+        let reconnectAttempts = 0;
+        let hypeTrainTimerInterval = null; // For the countdown timer
+        const maxReconnectAttempts = 5;
+
+        // Hype Train State
+        let hypeTrainData = {
+            isActive: false,
+            level: 1,
+            progress: 0,
+            timeRemaining: 0, // in seconds
+            goal: 100, // Default goal for 100%
+            current: 0 // Current progress towards goal
+        };
+
+        // Random footer messages (from StreamGoals)
+        const footerMessages = [
+            "Powered by a little energon, and a lot of luck",
+            "Fueled by coffee and determination",
+            "Built with love and late-night coding",
+            "Powered by pure streaming magic",
+            "Made with chaos and good intentions",
+            "Fueled by hope and Red Bull",
+            "Powered by the power of friendship",
+            "Built on dreams and Stack Overflow",
+            "Fueled by memes and determination",
+            "Powered by 1s and 0s (mostly 0s)",
+            "Made with bits, bytes, and vibes",
+            "Fueled by subscriber energy",
+            "Powered by follower notifications",
+            "Built with stream love and code",
+            "Fueled by chat encouragement"
+        ];
+
+        function setRandomFooterMessage() {
+            const messageEl = document.getElementById('randomFooterMessage');
+            if (messageEl) {
+                const randomIndex = Math.floor(Math.random() * footerMessages.length);
+                messageEl.textContent = footerMessages[randomIndex];
+            }
+        }
+
+        // View Management
+        function showView(viewId) {
+            // Ensure isOverlayMode is accessible for logging; it's defined globally.
+            // This log helps confirm the function is called and with which view.
+            if (typeof isOverlayMode !== 'undefined' && !isOverlayMode) {
+                console.log(`[HypeTrainManager] Attempting to switch to view: ${viewId}`);
+            }
+
+            // Hide all views
+            const views = document.querySelectorAll('.view');
+            views.forEach(view => {
+                view.classList.remove('active');
+            });
+
+            // Show the selected view
+            const activeView = document.getElementById(viewId);
+            if (activeView) {
+                activeView.classList.add('active');
+            } else {
+                console.error(`[HypeTrainManager] Error: View with ID '${viewId}' not found. Cannot switch view.`);
+            }
+
+            // Update active state for nav links
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.classList.remove('active'); // Remove active from all first
+                const onclickValue = link.getAttribute('onclick');
+                if (onclickValue && onclickValue.includes(`showView('${viewId}')`)) {
+                    link.classList.add('active');
+                }
+            });
+
+            if (typeof isOverlayMode !== 'undefined' && !isOverlayMode) {
+                if (activeView) {
+                    console.log(`[HypeTrainManager] Successfully switched to view: ${viewId}`);
+                } else {
+                    console.warn(`[HypeTrainManager] Failed to show view: ${viewId} (not found), but nav links might have updated.`);
+                }
+            }
+        }
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚂 Initializing Hype Train Manager...');
+
+            // Initialize BroadcastChannel for live settings updates
+            settingsChannel = new BroadcastChannel('hype-train-settings');
+
+            // Check if we're in overlay mode
+            const urlParams = new URLSearchParams(window.location.search);
+            isOverlayMode = urlParams.get('overlay') === 'true';
+
+            if (isOverlayMode) {
+                document.body.classList.add('overlay-only');
+                console.log('🌐 OVERLAY MODE ACTIVATED');
+                // Elements will start hidden based on CSS (opacity: 0, height: 0%)
+                // and will be made visible by updateHypeTrainDisplay() when an event occurs.
+                console.log('🎯 Overlay elements prepared for OBS (will appear on event)');
+
+                // Listen for settings updates from the dashboard via BroadcastChannel
+                settingsChannel.onmessage = (event) => {
+                    if (event.data && event.data.type === 'settingsUpdate' && event.data.settings) {
+                        console.log('📨 Received settings update via BroadcastChannel', event.data.settings);
+                        currentSettings = { ...defaultSettings, ...event.data.settings };
+                        applySettings(); // Apply CSS vars and base positions
+
+                        // If Hype Train is currently active, refresh its display fully
+                        // to apply direct styles like font sizes, visibility from new settings.
+                        if (hypeTrainData.isActive) {
+                            updateHypeTrainDisplay();
+                        }
+                    }
+                };
+            }
+
+            // Load settings from URL or localStorage
+            loadSettings();
+
+            // --- START: Ensure specific settings revert to application defaults on load ---
+            // This ensures that the WebSocket server and port always start with the application's
+            // default values as defined in `defaultSettings`, overriding any values
+            // that might have been loaded from localStorage for these specific keys when in dashboard mode.
+            // In overlay mode, URL settings take precedence.
+            if (!isOverlayMode) {
+                if (currentSettings.websocketServer !== defaultSettings.websocketServer) {
+                    console.log(`[HypeTrainManager] Dashboard: Initializing websocketServer to application default ('${defaultSettings.websocketServer}') over localStorage value ('${currentSettings.websocketServer}').`);
+                    currentSettings.websocketServer = defaultSettings.websocketServer;
+                }
+                if (currentSettings.websocketPort !== defaultSettings.websocketPort) {
+                    console.log(`[HypeTrainManager] Dashboard: Initializing websocketPort to application default ('${defaultSettings.websocketPort}') over localStorage value ('${currentSettings.websocketPort}').`);
+                    currentSettings.websocketPort = defaultSettings.websocketPort;
+                }
+            }
+            // --- END: Ensure specific settings revert to application defaults on load ---
+
+            // Apply settings
+            applySettings();
+
+            // Load settings into form (only if not in overlay mode)
+            if (!isOverlayMode) { // DASHBOARD/SETTINGS VIEW
+                loadSettingsToForm();
+                setupEventListeners();
+                setTimeout(() => {
+                    updatePreview();
+                    console.log('📱 Preview initialized with current settings');
+                }, 100);
+                console.log('[HypeTrainManager] Dashboard mode: Auto-connect is manual via button.');
+            } else { // OVERLAY MODE
+                console.log('[HypeTrainManager] Overlay mode: Preparing for auto-connection.');
+
+                // Function to attempt connection if details are available and not already connected/connecting
+                const attemptOverlayConnection = (reason) => {
+                    if (currentSettings.websocketServer && currentSettings.websocketPort) {
+                        if (!websocketConnection || websocketConnection.readyState === WebSocket.CLOSED || websocketConnection.readyState === WebSocket.CLOSING) {
+                            console.log(`[HypeTrainManager] Overlay mode: Auto-connecting to ${currentSettings.websocketServer}:${currentSettings.websocketPort} (${reason}).`);
+                            connectStreamerBot();
+                        } else {
+                            console.log(`[HypeTrainManager] Overlay mode: Already connected or connecting (${reason} trigger).`);
+                        }
+                    } else {
+                        console.warn(`[HypeTrainManager] Overlay mode: Connection details not available for auto-connect (${reason}).`);
+                    }
+                };
+
+                // Initial connection attempt (delayed)
+                setTimeout(() => attemptOverlayConnection('initial'), 1000);
+
+                // In overlay mode, show debug info briefly on load
+                setTimeout(() => {
+                    const debugOverlay = document.getElementById('obsDebugOverlay');
+                    if (debugOverlay) {
+                        debugOverlay.style.display = 'block';
+                        updateOBSDebugInfo();
+                        // Hide after 10 seconds unless manually kept open
+                        setTimeout(() => {
+                            if (debugOverlay.style.display === 'block' && !window.obsDebugInterval) {
+                                debugOverlay.style.display = 'none';
+                            }
+                        }, 3000); // Reduced from 10 seconds to 3 seconds
+                    }
+                    console.log('🎯 OBS OVERLAY READY:');
+                    console.log('💡 Press Ctrl+D to toggle debug overlay');
+                    console.log('💡 Press Ctrl+T to test hype train');
+                    console.log('💡 Press Ctrl+U to see current URL');
+                    console.log('📐 Recommended OBS Browser Source size: 1080x1920');
+                }, 2000);
+
+                // Later, try force-loading settings if initial ones were insufficient, then re-attempt connection.
+                setTimeout(() => {
+                    const detailsInitiallyMissing = !currentSettings.websocketServer || !currentSettings.websocketPort;
+                    if (detailsInitiallyMissing) {
+                        console.log('🔧 Overlay: Initial connection details missing. Attempting force load...');
+                        const forceLoadSuccess = forceLoadSettingsFromURL(); // This updates currentSettings
+                        if (forceLoadSuccess) {
+                            console.log('🔧 ✅ Overlay: Force load successful. Re-evaluating connection.');
+                            attemptOverlayConnection('after force load');
+                        } else {
+                            console.warn('🔧 ⚠️ Overlay: Force load failed or did not provide new settings.');
+                        }
+                    } else {
+                        console.log('🔧 Overlay: Connection details were present from initial load.');
+                    }
+                }, 2500); // Runs after initial attempt and debug overlay setup
+            }
+
+            // Initialize hype train status
+            updateHypeTrainStatus();
+
+            // Set random footer message (from StreamGoals)
+            setRandomFooterMessage();
+
+            console.log('✅ Hype Train Manager initialized');
+            console.log('📊 Overlay Mode:', isOverlayMode);
+            console.log('🎨 Settings Applied:', currentSettings);
+
+            // The logic for force-loading settings in overlay mode is now integrated above.
+        });
+            // Settings Management
+            function loadSettings() {
+                console.log('🔧 loadSettings() called');
+                const urlParams = new URLSearchParams(window.location.search);
+                const settingsFromUrlParam = urlParams.get('settings');
+
+                console.log('🔧 URL Parameters:', Object.fromEntries(urlParams));
+                console.log('🔧 Settings parameter:', settingsFromUrlParam);
+                console.log('🔧 Settings parameter length:', settingsFromUrlParam ? settingsFromUrlParam.length : 'null');
+                console.log('🔧 LZString available:', typeof LZString !== 'undefined');
+
+                if (settingsFromUrlParam) {
+                    let successfullyLoadedFromUrl = false;
+                    try {
+                        console.log('🔧 Attempting decompression...');
+
+                        // Check if LZString is actually loaded
+                        if (typeof LZString === 'undefined') {
+                            console.error('🔧 ❌ LZString is not loaded!');
+                            throw new Error('LZString library not available');
+                        }
+
+                        // Attempt to decompress and parse
+                        const decompressed = LZString.decompressFromBase64(settingsFromUrlParam);
+                        console.log('🔧 Decompression result:', decompressed);
+                        console.log('🔧 Decompression type:', typeof decompressed);
+                        console.log('🔧 Decompression length:', decompressed ? decompressed.length : 'null');
+
+                        if (decompressed && typeof decompressed === 'string' && decompressed.trim() !== "") {
+                            console.log('🔧 Attempting JSON parse...');
+                            const parsed = JSON.parse(decompressed);
+                            console.log('🔧 Parsed settings:', parsed);
+
+                            // Merge with defaults
+                            const oldSettings = { ...currentSettings };
+                            currentSettings = { ...defaultSettings, ...parsed };
+                            successfullyLoadedFromUrl = true;
+
+                            console.log('🔧 ✅ Settings loaded from compressed URL parameter');
+                            console.log('🔧 Old settings:', oldSettings);
+                            console.log('🔧 New settings:', currentSettings);
+                            console.log('🔧 Settings differences:', Object.keys(parsed).length);
+
+                        } else {
+                            console.error('🔧 ❌ Decompression failed or returned empty/invalid result');
+                            console.error('🔧 Decompressed value:', JSON.stringify(decompressed));
+                        }
+                    } catch (error) {
+                        console.error('🔧 ❌ Error during settings loading:', error);
+                        console.error('🔧 Error stack:', error.stack);
+                    }
+
+                    if (!successfullyLoadedFromUrl) {
+                        console.warn('🔧 ⚠️ Failed to load settings from URL. Using default settings for overlay mode.');
+                        if (!isOverlayMode) {
+                            loadFromLocalStorage();
+                        }
+                    }
+                } else {
+                    console.log('🔧 No settings parameter in URL');
+                    if (isOverlayMode) {
+                        console.log('🔧 Overlay mode: No settings in URL, using default settings.');
+                    } else {
+                        console.log('🔧 Dashboard mode: Loading from localStorage...');
+                        loadFromLocalStorage();
+                    }
+                }
+
+                console.log('🔧 Final currentSettings:', currentSettings);
+            }
+
+            function loadFromLocalStorage() {
+                if (typeof (Storage) !== "undefined") {
+                    try {
+                        const saved = localStorage.getItem('hypeTrainSettings');
+                        if (saved) {
+                            currentSettings = { ...defaultSettings, ...JSON.parse(saved) };
+                            console.log('Settings loaded from localStorage');
+                        }
+                    } catch (e) {
+                        console.log('localStorage not available, using defaults');
+                    }
+                }
+            }
+
+            function saveSettings() {
+                // Get current form values
+                currentSettings = {
+                    fontFamily: document.getElementById('fontFamily').value,
+                    titleSize: parseInt(document.getElementById('titleSize').value),
+                    subtitleSize: parseInt(document.getElementById('subtitleSize').value),
+                    levelSize: parseInt(document.getElementById('levelSize').value),
+                    progressSize: parseInt(document.getElementById('progressSize').value),
+                    timeSize: parseInt(document.getElementById('timeSize').value),
+                    fontColor: document.getElementById('fontColor').value,
+                    progressColor1: document.getElementById('progressColor1').value,
+                    progressColor2: document.getElementById('progressColor2').value,
+                    progressColor3: document.getElementById('progressColor3').value,
+                    websocketServer: document.getElementById('websocketServer').value,
+                    websocketPort: document.getElementById('websocketPort').value,
+                    autoReconnect: document.getElementById('autoReconnect').checked,
+                    trainIconSize: parseInt(document.getElementById('trainIconSize').value),
+                    showTrainIcon: document.getElementById('showTrainIcon').checked,
+                    showSubtitle: document.getElementById('showSubtitle').checked,
+                    showProgressText: document.getElementById('showProgressText').checked,
+                    showTimeRemaining: document.getElementById('showTimeRemaining').checked,
+                    // Save new position settings
+                    headerOffsetY: parseInt(document.getElementById('headerOffsetY').value),
+                    levelOffsetY: parseInt(document.getElementById('levelOffsetY').value),
+                    timeOffsetY: parseInt(document.getElementById('timeOffsetY').value),
+                    progressTextTop: parseInt(document.getElementById('progressTextTop').value),
+                    backgroundOpacity: parseInt(document.getElementById('backgroundOpacity').value) / 100, // Store as 0-1
+                    hypeTrainEndMessage: document.getElementById('hypeTrainEndMessage').value,
+                    endMessageSize: parseInt(document.getElementById('endMessageSize').value)
+                };
+
+                // Save to localStorage
+                if (typeof (Storage) !== "undefined") {
+                    try {
+                        // Update currentSettings before saving
+                        localStorage.setItem('hypeTrainSettings', JSON.stringify(currentSettings));
+                    } catch (e) {
+                        console.log('Could not save to localStorage');
+                    }
+                }
+
+                // Apply settings
+                applySettings();
+
+                // Broadcast settings update to other contexts (like OBS overlay)
+                if (settingsChannel) {
+                    settingsChannel.postMessage({ type: 'settingsUpdate', settings: currentSettings });
+                }
+
+                showNotification('Settings saved successfully!', 'success');
+            }
+
+            function loadSettingsToForm() {
+                document.getElementById('fontFamily').value = currentSettings.fontFamily;
+                document.getElementById('titleSize').value = currentSettings.titleSize;
+                document.getElementById('subtitleSize').value = currentSettings.subtitleSize || 80;
+                document.getElementById('levelSize').value = currentSettings.levelSize;
+                document.getElementById('progressSize').value = currentSettings.progressSize;
+                document.getElementById('timeSize').value = currentSettings.timeSize;
+                document.getElementById('trainIconSize').value = currentSettings.trainIconSize || 220;
+                document.getElementById('fontColor').value = currentSettings.fontColor;
+                document.getElementById('progressColor1').value = currentSettings.progressColor1;
+                document.getElementById('progressColor2').value = currentSettings.progressColor2;
+                document.getElementById('progressColor3').value = currentSettings.progressColor3;
+                document.getElementById('websocketServer').value = currentSettings.websocketServer;
+                document.getElementById('websocketPort').value = currentSettings.websocketPort;
+                document.getElementById('autoReconnect').checked = currentSettings.autoReconnect;
+
+                // Display toggles
+                document.getElementById('showTrainIcon').checked = currentSettings.showTrainIcon !== false;
+                document.getElementById('showSubtitle').checked = currentSettings.showSubtitle !== false;
+                document.getElementById('showProgressText').checked = currentSettings.showProgressText !== false;
+                document.getElementById('showTimeRemaining').checked = currentSettings.showTimeRemaining !== false;
+
+                // Load position settings
+                document.getElementById('headerOffsetY').value = currentSettings.headerOffsetY || 0;
+                document.getElementById('levelOffsetY').value = currentSettings.levelOffsetY || 0;
+                document.getElementById('timeOffsetY').value = currentSettings.timeOffsetY || 0;
+                document.getElementById('progressTextTop').value = currentSettings.progressTextTop || 1;
+                document.getElementById('hypeTrainEndMessage').value = currentSettings.hypeTrainEndMessage || "Thanks for the Hype!";
+                document.getElementById('endMessageSize').value = currentSettings.endMessageSize || 60;
+                document.getElementById('backgroundOpacity').value = (currentSettings.backgroundOpacity || 0.75) * 100;
+
+                // Update server connection fields
+                document.getElementById('serverIP').value = currentSettings.websocketServer;
+                document.getElementById('serverPort').value = currentSettings.websocketPort;
+
+                updateRangeDisplays();
+                updatePreview(); // Ensure preview is updated with loaded settings
+            }
+
+            function applySettings() {
+                const root = document.documentElement;
+
+                // Apply CSS custom properties
+                root.style.setProperty('--hype-font-family', currentSettings.fontFamily);
+                root.style.setProperty('--hype-font-color', currentSettings.fontColor);
+                root.style.setProperty('--hype-title-size', currentSettings.titleSize + 'px');
+                root.style.setProperty('--hype-subtitle-size', (currentSettings.subtitleSize || 80) + 'px');
+                root.style.setProperty('--hype-train-icon-size', (currentSettings.trainIconSize || 220) + 'px');
+                root.style.setProperty('--hype-level-size', currentSettings.levelSize + 'px');
+                root.style.setProperty('--hype-progress-size', currentSettings.progressSize + 'px');
+                root.style.setProperty('--hype-time-size', currentSettings.timeSize + 'px');
+                root.style.setProperty('--hype-color-1', currentSettings.progressColor1);
+                root.style.setProperty('--hype-color-2', currentSettings.progressColor2);
+                root.style.setProperty('--hype-color-3', currentSettings.progressColor3);
+                root.style.setProperty('--hype-end-message-size', (currentSettings.endMessageSize || 60) + 'px');
+                root.style.setProperty('--hype-bg-opacity', currentSettings.backgroundOpacity || 0.75);
+
+                // Apply position settings to the main overlay elements
+                const trainHeader = document.querySelector('.train-header');
+                if (trainHeader) {
+                    trainHeader.style.transform = `translateY(${currentSettings.headerOffsetY || 0}px)`;
+                } else {
+                    console.warn('Element .train-header not found, cannot apply header offset.');
+                }
+
+                const levelDisplay = document.querySelector('.level-display');
+                if (levelDisplay) {
+                    levelDisplay.style.transform = `translateY(${currentSettings.levelOffsetY || 0}px)`;
+                } else {
+                    console.warn('Element .level-display not found, cannot apply level offset.');
+                }
+
+                const statsSection = document.querySelector('.stats-section');
+                if (statsSection) {
+                    statsSection.style.transform = `translateY(${currentSettings.timeOffsetY || 0}px)`;
+                } else {
+                    console.warn('Element .stats-section not found, cannot apply stats offset.');
+                }
+                root.style.setProperty('--hype-progress-text-top', (currentSettings.progressTextTop || 1) + '%');
+
+                console.log('Settings applied to CSS variables');
+            }
+
+            function updateRangeDisplays() {
+                document.getElementById('titleSizeValue').textContent = document.getElementById('titleSize').value + 'px';
+                document.getElementById('subtitleSizeValue').textContent = document.getElementById('subtitleSize').value + 'px';
+                document.getElementById('levelSizeValue').textContent = document.getElementById('levelSize').value + 'px';
+                document.getElementById('progressSizeValue').textContent = document.getElementById('progressSize').value + 'px';
+                document.getElementById('timeSizeValue').textContent = document.getElementById('timeSize').value + 'px';
+                document.getElementById('trainIconSizeValue').textContent = document.getElementById('trainIconSize').value + 'px';
+                // Update position range displays
+                document.getElementById('headerOffsetYValue').textContent = document.getElementById('headerOffsetY').value + 'px';
+                document.getElementById('levelOffsetYValue').textContent = document.getElementById('levelOffsetY').value + 'px';
+                document.getElementById('timeOffsetYValue').textContent = document.getElementById('timeOffsetY').value + 'px';
+                document.getElementById('progressTextTopValue').textContent = document.getElementById('progressTextTop').value + '%';
+                document.getElementById('endMessageSizeValue').textContent = document.getElementById('endMessageSize').value + 'px';
+                document.getElementById('backgroundOpacityValue').textContent = document.getElementById('backgroundOpacity').value + '%';
+            }
+
+            function updatePreview() {
+                const previewTitle = document.getElementById('previewTitle');
+                const previewSubtitle = document.getElementById('previewSubtitle');
+                const previewLevel = document.getElementById('previewLevel');
+                const previewTime = document.getElementById('previewTime');
+                const previewTrainIcon = document.getElementById('previewTrainIcon');
+                const previewProgressText = document.getElementById('previewProgressText');
+                const previewFill = document.getElementById('previewFill');
+                // Get preview section elements for positioning
+                const previewHeaderSection = document.querySelector('.preview-train-header');
+                const previewLevelSection = document.querySelector('.preview-level-section');
+                const previewTimeSection = document.querySelector('.preview-time-section');
+
+                // End Message Preview elements
+                const endMessagePreviewTextEl = document.getElementById('endMessagePreviewText');
+
+                // Consistent scaling divisor based on ~1080p overlay to 200px preview width
+                const previewScaleDivisor = 5.4;
+
+                // Scaled margins for preview (approximating main overlay's fixed margins)
+                // Main overlay: .train-header margin-bottom: 60px -> 60 / 5.4 = ~11px
+                // Main overlay: .level-display margin-bottom: 100px -> 100 / 5.4 = ~18.5px
+                document.documentElement.style.setProperty('--preview-scaled-icon-margin', `${40 / previewScaleDivisor}px`); // Original icon margin-bottom: 40px
+                document.documentElement.style.setProperty('--preview-scaled-title-margin', `${40 / previewScaleDivisor}px`); // Original title margin-bottom: 40px
+                document.documentElement.style.setProperty('--preview-scaled-level-margin-vertical', `${60 / previewScaleDivisor}px`); // Combined effect for spacing
+                document.documentElement.style.setProperty('--preview-scaled-time-margin-top', `${100 / previewScaleDivisor}px`); // Spacing before time
+
+                // Get current form values
+                const fontFamily = document.getElementById('fontFamily').value;
+                const fontColor = document.getElementById('fontColor').value;
+                const titleSize = parseInt(document.getElementById('titleSize').value);
+                const subtitleSize = parseInt(document.getElementById('subtitleSize').value);
+                const levelSize = parseInt(document.getElementById('levelSize').value);
+                const progressSize = parseInt(document.getElementById('progressSize').value);
+                const timeSize = parseInt(document.getElementById('timeSize').value);
+                const trainIconSize = parseInt(document.getElementById('trainIconSize').value);
+                const progressColor1 = document.getElementById('progressColor1').value;
+                const progressColor2 = document.getElementById('progressColor2').value;
+                const progressColor3 = document.getElementById('progressColor3').value;
+
+                // Visibility toggles
+                const showTrainIcon = document.getElementById('showTrainIcon').checked;
+                const showSubtitle = document.getElementById('showSubtitle').checked;
+                const showProgressText = document.getElementById('showProgressText').checked;
+                const showTimeRemaining = document.getElementById('showTimeRemaining').checked;
+
+                // Get position values from form
+                const headerOffsetY = parseInt(document.getElementById('headerOffsetY').value);
+                const levelOffsetY = parseInt(document.getElementById('levelOffsetY').value);
+                const timeOffsetY = parseInt(document.getElementById('timeOffsetY').value);
+                const progressTextTop = parseInt(document.getElementById('progressTextTop').value);
+                // End message specific settings
+                const hypeTrainEndMessage = document.getElementById('hypeTrainEndMessage').value;
+                const endMessageSize = parseInt(document.getElementById('endMessageSize').value);
+
+                // Update preview title
+                if (previewTitle) {
+                    previewTitle.style.fontFamily = fontFamily;
+                    previewTitle.style.color = fontColor;
+                    previewTitle.style.fontSize = (titleSize / previewScaleDivisor) + 'px';
+                }
+
+                // Update preview subtitle
+                if (previewSubtitle) {
+                    previewSubtitle.style.fontFamily = fontFamily;
+                    previewSubtitle.style.color = fontColor;
+                    previewSubtitle.style.fontSize = (subtitleSize / previewScaleDivisor) + 'px';
+                    previewSubtitle.style.display = showSubtitle ? 'block' : 'none';
+                }
+
+                // Update preview level
+                if (previewLevel) {
+                    previewLevel.style.fontFamily = fontFamily;
+                    previewLevel.style.color = fontColor;
+                    previewLevel.style.fontSize = (levelSize / previewScaleDivisor) + 'px';
+                }
+
+                // Update train icon
+                if (previewTrainIcon) {
+                    previewTrainIcon.style.fontFamily = fontFamily; // For consistency, though may not affect emoji much
+                    previewTrainIcon.style.color = fontColor;       // Apply font color to the icon
+                    previewTrainIcon.style.fontSize = (trainIconSize / previewScaleDivisor) + 'px';
+                    previewTrainIcon.style.display = showTrainIcon ? 'block' : 'none';
+                }
+
+                // Update progress text
+                if (previewProgressText) {
+                    previewProgressText.style.fontFamily = fontFamily;
+                    previewProgressText.style.color = fontColor;
+                    previewProgressText.style.fontSize = (progressSize / previewScaleDivisor) + 'px';
+                    previewProgressText.style.display = showProgressText ? 'block' : 'none';
+                    previewProgressText.style.top = `${progressTextTop}%`; // Apply top position
+                }
+
+                // Update progress bar gradient
+                if (previewFill) {
+                    previewFill.style.background = `linear-gradient(180deg, ${progressColor1} 0%, ${progressColor2} 50%, ${progressColor3} 100%)`;
+                }
+
+                // Apply position settings to preview sections
+                if (previewHeaderSection) {
+                    previewHeaderSection.style.transform = `translateY(${headerOffsetY / previewScaleDivisor}px)`;
+                }
+                if (previewLevelSection) {
+                    previewLevelSection.style.transform = `translateY(${levelOffsetY / previewScaleDivisor}px)`;
+                }
+
+                // Update preview time section (handles visibility and styling of time)
+                if (previewTimeSection) {
+                    if (showTimeRemaining) {
+                        previewTimeSection.style.display = 'block'; // Or its default display like 'text-align: center'
+                        previewTimeSection.style.transform = `translateY(${timeOffsetY / previewScaleDivisor}px)`;
+                        if (previewTime) { // Style the inner text element
+                            previewTime.style.fontFamily = fontFamily;
+                            previewTime.style.color = fontColor;
+                            previewTime.style.fontSize = (timeSize / previewScaleDivisor) + 'px';
+                        }
+                    } else {
+                        previewTimeSection.style.display = 'none';
+                    }
+                }
+
+                // Update End Message Preview
+                if (endMessagePreviewTextEl) {
+                    endMessagePreviewTextEl.textContent = hypeTrainEndMessage;
+                    endMessagePreviewTextEl.style.fontFamily = fontFamily; // Use main font family
+                    endMessagePreviewTextEl.style.color = fontColor;       // Use main font color
+
+                    // Scale end message font size for its preview
+                    // Max font size for preview: e.g., 40px. Scaled size = endMessageSize / divisor
+                    const endMessagePreviewScaleDivisor = 5.4; // Same as main preview for consistency
+                    let scaledEndMessageFontSize = endMessageSize / endMessagePreviewScaleDivisor;
+                    scaledEndMessageFontSize = Math.min(scaledEndMessageFontSize, 50); // Cap max size for preview box
+                    scaledEndMessageFontSize = Math.max(scaledEndMessageFontSize, 10);   // Cap min size for preview box
+                    endMessagePreviewTextEl.style.fontSize = scaledEndMessageFontSize + 'px';
+                }
+
+
+
+                // console.log('📱 Preview updated with current form values.'); // Optional: for debugging
+            }
+
+            function setupEventListeners() {
+                // Real-time preview updates for all controls
+                const previewElements = [
+                    'fontFamily', 'fontColor',
+                    'progressColor1', 'progressColor2', 'progressColor3',
+                    'showTrainIcon', 'showSubtitle', 'showProgressText', 'showTimeRemaining'
+                ];
+
+                previewElements.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.addEventListener('change', updatePreview);
+                        element.addEventListener('input', updatePreview);
+                    }
+                });
+
+                // Range sliders with immediate updates
+                const rangeInputs = [
+                    'titleSize', 'subtitleSize', 'levelSize', 'progressSize', 'timeSize', 'trainIconSize',
+                    'headerOffsetY', 'levelOffsetY', 'timeOffsetY', 'progressTextTop',
+                    'backgroundOpacity', // New appearance slider
+                    'endMessageSize' // New end message size slider
+                ];
+
+                rangeInputs.forEach(id => {
+                    const input = document.getElementById(id);
+                    if (input) {
+                        input.addEventListener('input', function () {
+                            updateRangeDisplays();
+                            updatePreview(); // Update preview immediately as user drags
+                        }); // 'change' listener for range inputs is also present, which is fine.
+                        input.addEventListener('change', function () {
+                            updateRangeDisplays();
+                            updatePreview(); // Update when user releases
+                        });
+                    }
+                });
+
+                // Event listener for the end message text input
+                const endMessageInput = document.getElementById('hypeTrainEndMessage');
+                if (endMessageInput) {
+                    endMessageInput.addEventListener('input', () => {
+                        updatePreview(); // Update the end message preview live
+                    });
+                }
+
+                // Connection settings
+                const connectionInputs = ['websocketServer', 'websocketPort'];
+                connectionInputs.forEach(id => {
+                    const input = document.getElementById(id);
+                    if (input) {
+                        input.addEventListener('change', function () {
+                            // Update the dashboard connection fields
+                            if (id === 'websocketServer') {
+                                const serverIP = document.getElementById('serverIP');
+                                if (serverIP) serverIP.value = this.value;
+                            }
+                            if (id === 'websocketPort') {
+                                const serverPort = document.getElementById('serverPort');
+                                if (serverPort) serverPort.value = this.value;
+                            }
+                        });
+                    }
+                });
+
+                console.log('📱 Event listeners setup for complete hype train preview');
+            }
+
+            // Preview Functions
+            function animatePreview() {
+                const previewFill = document.getElementById('previewFill');
+                const previewLevel = document.getElementById('previewLevel');
+
+                if (previewFill && previewLevel) {
+                    // Reset
+                    previewFill.style.height = '0%';
+                    previewLevel.textContent = 'LEVEL 1';
+
+                    // Animate to 75%
+                    setTimeout(() => {
+                        previewFill.style.height = '75%';
+                        previewFill.style.transition = 'height 2s ease-out';
+                    }, 100);
+
+                    // Level up animation
+                    setTimeout(() => {
+                        previewLevel.textContent = 'LEVEL 2';
+                        previewFill.style.height = '100%';
+                    }, 1500);
+
+                    // Reset after animation
+                    setTimeout(() => {
+                        previewFill.style.height = '60%';
+                        previewLevel.textContent = 'LEVEL 3';
+                        previewFill.style.transition = 'height 0.3s ease';
+                    }, 3000);
+
+                    if (!isOverlayMode) {
+                        showNotification('🎬 Preview animation complete!', 'success');
+                    }
+                }
+            }
+
+            // Color functions
+            function resetColors() {
+                document.getElementById('progressColor1').value = '#a970ff';
+                document.getElementById('progressColor2').value = '#9146ff';
+                document.getElementById('progressColor3').value = '#772ce8';
+                updatePreview();
+                showNotification('Colors reset to default!', 'success');
+            }
+
+            function randomizeColors() {
+                // Generate harmonious colors
+                const baseHue = Math.floor(Math.random() * 360);
+                const colors = [];
+
+                for (let i = 0; i < 3; i++) {
+                    const hue = (baseHue + (i * 30)) % 360;
+                    const saturation = 75 + Math.random() * 20;
+                    const lightness = 50 + Math.random() * 15;
+                    colors.push(hslToHex(hue, saturation, lightness));
+                }
+
+                document.getElementById('progressColor1').value = colors[0];
+                document.getElementById('progressColor2').value = colors[1];
+                document.getElementById('progressColor3').value = colors[2];
+                updatePreview();
+                showNotification('Colors randomized!', 'success');
+            }
+
+            function hslToHex(h, s, l) {
+                h = h % 360;
+                s = Math.max(0, Math.min(100, s)) / 100;
+                l = Math.max(0, Math.min(100, l)) / 100;
+
+                const hDecimal = h / 60;
+                const c = (1 - Math.abs(2 * l - 1)) * s;
+                const x = c * (1 - Math.abs((hDecimal % 2) - 1));
+                const m = l - c / 2;
+
+                let r, g, b;
+
+                if (hDecimal >= 0 && hDecimal < 1) {
+                    r = c; g = x; b = 0;
+                } else if (hDecimal >= 1 && hDecimal < 2) {
+                    r = x; g = c; b = 0;
+                } else if (hDecimal >= 2 && hDecimal < 3) {
+                    r = 0; g = c; b = x;
+                } else if (hDecimal >= 3 && hDecimal < 4) {
+                    r = 0; g = x; b = c;
+                } else if (hDecimal >= 4 && hDecimal < 5) {
+                    r = x; g = 0; b = c;
+                } else {
+                    r = c; g = 0; b = x;
+                }
+
+                r = Math.round((r + m) * 255);
+                g = Math.round((g + m) * 255);
+                b = Math.round((b + m) * 255);
+
+                const toHex = (n) => {
+                    const hex = n.toString(16);
+                    return hex.length === 1 ? '0' + hex : hex;
+                };
+
+                return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+            }
+
+            // URL Generation
+            function generateOverlayURL() {
+                // Create a temporary settings object directly from the current form values
+                // This ensures the URL reflects what's visually configured, even if not yet "saved" to localStorage
+                const settingsFromForm = {
+                    fontFamily: document.getElementById('fontFamily').value,
+                    titleSize: parseInt(document.getElementById('titleSize').value),
+                    subtitleSize: parseInt(document.getElementById('subtitleSize').value),
+                    levelSize: parseInt(document.getElementById('levelSize').value),
+                    progressSize: parseInt(document.getElementById('progressSize').value),
+                    timeSize: parseInt(document.getElementById('timeSize').value),
+                    fontColor: document.getElementById('fontColor').value,
+                    progressColor1: document.getElementById('progressColor1').value,
+                    progressColor2: document.getElementById('progressColor2').value,
+                    progressColor3: document.getElementById('progressColor3').value,
+                    websocketServer: document.getElementById('websocketServer').value, // From settings tab
+                    websocketPort: document.getElementById('websocketPort').value,     // From settings tab
+                    autoReconnect: document.getElementById('autoReconnect').checked,
+                    trainIconSize: parseInt(document.getElementById('trainIconSize').value),
+                    showTrainIcon: document.getElementById('showTrainIcon').checked,
+                    showSubtitle: document.getElementById('showSubtitle').checked,
+                    showProgressText: document.getElementById('showProgressText').checked,
+                    showTimeRemaining: document.getElementById('showTimeRemaining').checked,
+                    headerOffsetY: parseInt(document.getElementById('headerOffsetY').value),
+                    levelOffsetY: parseInt(document.getElementById('levelOffsetY').value),
+                    timeOffsetY: parseInt(document.getElementById('timeOffsetY').value),
+                    progressTextTop: parseInt(document.getElementById('progressTextTop').value),
+                    backgroundOpacity: parseInt(document.getElementById('backgroundOpacity').value) / 100,
+                    hypeTrainEndMessage: document.getElementById('hypeTrainEndMessage').value,
+                    endMessageSize: parseInt(document.getElementById('endMessageSize').value)
+                };
+
+                // Remove defaults to save space in the URL
+                const compactSettings = {};
+                Object.keys(settingsFromForm).forEach(key => {
+                    if (settingsFromForm[key] !== defaultSettings[key]) {
+                        compactSettings[key] = settingsFromForm[key];
+                    }
+                });
+
+                // Compress settings
+                const settingsJSON = JSON.stringify(compactSettings);
+                const compressedSettings = LZString.compressToBase64(settingsJSON);
+                const encodedSettingsForURL = encodeURIComponent(compressedSettings);
+
+                // Generate URL
+                const currentURL = new URL(window.location.href);
+                const overlayURL = new URL(currentURL);
+                overlayURL.search = `?overlay=true&settings=${encodedSettingsForURL}`;
+
+                document.getElementById('overlayURL').value = overlayURL.toString();
+                showNotification('Overlay URL generated with current form values!', 'success');
+            }
+
+            function copyOverlayURL() {
+                const urlTextarea = document.getElementById('overlayURL');
+                urlTextarea.select();
+
+                try {
+                    document.execCommand('copy');
+                    showNotification('URL copied to clipboard!', 'success');
+                } catch (err) {
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(urlTextarea.value).then(() => {
+                            showNotification('URL copied to clipboard!', 'success');
+                        }).catch(() => {
+                            showNotification('Could not copy URL. Please copy manually.', 'error');
+                        });
+                    } else {
+                        showNotification('Could not copy URL. Please copy manually.', 'error');
+                    }
+                }
+            }
+
+            function openOverlayPreview() {
+                const url = document.getElementById('overlayURL').value;
+                if (url) {
+                    window.open(url, '_blank');
+                    showNotification('Preview opened in new tab!', 'success');
+                } else {
+                    showNotification('Please generate a URL first!', 'warning');
+                }
+            }
+
+            function testConnection() {
+                const server = document.getElementById('serverIP').value;
+                const port = document.getElementById('serverPort').value;
+
+                showNotification('Testing connection...', 'warning');
+
+                const testWs = new WebSocket(`ws://${server}:${port}/`);
+
+                testWs.onopen = () => {
+                    showNotification('Connection test successful!', 'success');
+                    testWs.close();
+                };
+
+                testWs.onerror = () => {
+                    showNotification('Connection test failed!', 'error');
+                };
+            }
+
+            function updateConnectionStatus(status, text) {
+                const indicator = document.getElementById('statusIndicator');
+                const statusText = document.getElementById('connectionStatusText');
+
+                if (indicator) {
+                    indicator.className = 'status-indicator';
+                    if (status === 'connected') {
+                        indicator.classList.add('connected');
+                    }
+                }
+
+                if (statusText) {
+                    statusText.textContent = text;
+                }
+            }
+
+            // Streamer.bot Message Handling
+            function handleStreamerBotMessage(data) {
+                // Handle Hello message
+                if (data.request === 'Hello') {
+                    console.log('👋 Hello from Streamer.bot:', data.info);
+                    debugLog('Hello received: ' + data.info.name + ' v' + data.info.version);
+                    subscribeToEvents();
+                    return;
+                }
+
+                // Handle subscription confirmation
+                if (data.id && data.status === 'ok') {
+                    console.log('📡 Successfully subscribed to events');
+                    debugLog('Subscription confirmed');
+                    return;
+                }
+
+                // Handle Hype Train events
+                if (data.event && data.event.source === 'Twitch' && data.data) {
+                    const eventType = data.event.type;
+                    console.log(`🎯 Processing Twitch event: ${eventType}`);
+                    debugLog(`Hype Train Event: ${eventType}`);
+ 
+                    switch (eventType) {
+                        case 'HypeTrainStart':
+                            handleHypeTrainStart(data.data);
+                            break;
+                        case 'HypeTrainProgress':
+                            handleHypeTrainProgress(data.data);
+                            break;
+                        case 'HypeTrainUpdate': // Changed from HypeTrainProgress
+                            handleHypeTrainProgress(data.data); // Still calls the same handler, assuming data structure is compatible
+                            break;
+                        case 'HypeTrainLevelUp':
+                            handleHypeTrainLevelUp(data.data);
+                            break;
+                        case 'HypeTrainEnd':
+                            handleHypeTrainEnd(data.data);
+                            break;
+                    }
+                }
+            }
+
+            function subscribeToEvents() {
+                const subscribeMessage = {
+                    request: 'Subscribe',
+                    id: 'hype-train-manager',
+                    events: {
+                        'Twitch': ['HypeTrainStart', 'HypeTrainUpdate', 'HypeTrainLevelUp', 'HypeTrainEnd'] // Changed HypeTrainProgress to HypeTrainUpdate
+                    }
+                };
+
+                if (websocketConnection && websocketConnection.readyState === WebSocket.OPEN) {
+                    websocketConnection.send(JSON.stringify(subscribeMessage));
+                    console.log('📡 Sent subscription request');
+                    debugLog('Subscription request sent');
+                }
+            }
+
+            // Hype Train Event Handlers
+            function handleHypeTrainStart(data) {
+                console.log('🚂 Hype Train Started!', data);
+                debugLog('Hype Train STARTED - Level: ' + (data.level || 1));
+
+                hypeTrainData.isActive = true;
+                hypeTrainData.level = data.level || 1;
+                hypeTrainData.progress = Math.round((data.progress / data.goal) * 100) || 0;
+                // Calculate initial timeRemaining based on start and expiry
+                hypeTrainData.timeRemaining = Math.round((new Date(data.expires_at) - new Date(data.started_at)) / 1000) || 300;
+
+                updateHypeTrainDisplay();
+                updateHypeTrainStatus();
+                showNotification('🚂 Hype Train Started!', 'success');
+            startHypeTrainCountdown(); // Start the visual countdown
+            }
+            
+
+            function handleHypeTrainProgress(data) {
+                console.log('📈 Hype Train Progress:', data);
+                debugLog('Hype Train PROGRESS - ' + Math.round((data.progress / data.goal) * 100) + '%');
+
+                if (hypeTrainData.isActive) {
+                    hypeTrainData.progress = Math.round((data.progress / data.goal) * 100) || 0;
+                    // Resync timeRemaining with the event's expires_at
+                    hypeTrainData.timeRemaining = Math.round((new Date(data.expires_at) - Date.now()) / 1000) || 0;
+                    updateHypeTrainDisplay();
+                    updateHypeTrainStatus();
+                }
+            }
+
+            function handleHypeTrainLevelUp(data) {
+                console.log('🎉 Hype Train Level Up!', data);
+                debugLog('Hype Train LEVEL UP - Level: ' + (data.level || hypeTrainData.level + 1));
+
+                if (hypeTrainData.isActive) {
+                    hypeTrainData.level = data.level || hypeTrainData.level + 1;
+                    hypeTrainData.progress = Math.round((data.progress / data.goal) * 100) || 0;
+                    // Resync timeRemaining if expires_at is provided (level ups often extend time)
+                    if (data.expires_at) {
+                        hypeTrainData.timeRemaining = Math.round((new Date(data.expires_at) - Date.now()) / 1000) || 0;
+                    }
+                    updateHypeTrainDisplay();
+                    updateHypeTrainStatus();
+                    showNotification('🎉 Hype Train Level Up!', 'success');
+                }
+            }
+
+            function handleHypeTrainEnd(data) {
+                console.log('🏁 Hype Train Ended!', data);
+                debugLog('Hype Train ENDED - Final Level: ' + hypeTrainData.level);
+
+                hypeTrainData.isActive = false;
+                hypeTrainData.timeRemaining = 0;
+                if (hypeTrainTimerInterval) clearInterval(hypeTrainTimerInterval); // Stop countdown
+                
+                // Don't call updateHypeTrainDisplay() here as it might re-show elements
+                // that we are about to fade or that should stay faded.
+                updateHypeTrainStatus(); // Update dashboard status
+
+                if (!isOverlayMode) {
+                    showNotification('🏁 Hype Train Ended!', 'warning');
+                    // Standard hide delay for dashboard/manager view
+                    setTimeout(() => {
+                        hideHypeTrainDisplay(true); // Full hide for dashboard
+                    }, 3000);
+                } else {
+                    // Overlay mode: Show custom end message
+                    const endMessageContainer = document.getElementById('hypeTrainEndMessageContainer');
+                    const endMessageText = document.getElementById('hypeTrainEndMessageText');
+                    const hypeTrainMainContainer = document.getElementById('hypeTrainContainer');
+
+                    if (endMessageContainer && endMessageText && currentSettings.hypeTrainEndMessage && currentSettings.hypeTrainEndMessage.trim() !== "") {
+                        // Ensure main container is visible to show the end message
+                        if (hypeTrainMainContainer) {
+                            hypeTrainMainContainer.style.display = 'flex';
+                            hypeTrainMainContainer.style.opacity = '1';
+                        }
+
+                        endMessageText.textContent = currentSettings.hypeTrainEndMessage;
+                        endMessageContainer.style.display = 'flex'; // Or 'block', using flex for potential inner centering
+                        setTimeout(() => endMessageContainer.style.opacity = '1', 10); // Slight delay for display change
+
+                        // Step 1: After 0.5 seconds, fade out core Hype Train visuals (icon, title, etc.)
+                        setTimeout(() => {
+                            fadeOutCoreHypeTrainVisuals();
+                        }, 500); // 0.5 seconds after end message starts appearing
+
+                        // Step 2: After 5 seconds of the end message showing, fade out the entire overlay
+                        setTimeout(() => {
+                            hideHypeTrainDisplay(true); // Full hide including the main container and end message
+                        }, 5000); // 5 seconds after end message starts appearing
+                    } else {
+                        // If no custom message, hide the entire overlay after a shorter delay
+                        // If no custom message, hide the entire overlay after a shorter delay
+                        setTimeout(() => {
+                            fadeOutCoreHypeTrainVisuals(); // Fade out visuals first
+                            const mainContainer = document.getElementById('hypeTrainContainer');
+                            if (mainContainer) {
+                                mainContainer.style.opacity = '0';
+                                setTimeout(() => {
+                                    if (mainContainer.style.opacity === '0') mainContainer.style.display = 'none';
+                                    const progressTextEl = document.getElementById('progressText');
+                                    if (progressTextEl && progressTextEl.style.opacity === '0') progressTextEl.style.display = 'none';
+                                }, 550); // Wait for main container fade
+                            }
+                        }, 1000); // e.g., 1 second
+                    }
+                }
+            }
+
+            function fadeOutCoreHypeTrainVisuals() {
+                if (!isOverlayMode) return;
+
+                const mainHypeTrainContainer = document.getElementById('hypeTrainContainer');
+
+                if (mainHypeTrainContainer) {
+                    const trainHeader = mainHypeTrainContainer.querySelector('.train-header');
+                    if (trainHeader) trainHeader.style.opacity = '0';
+
+                    const levelDisplay = mainHypeTrainContainer.querySelector('.level-display');
+                    if (levelDisplay) levelDisplay.style.opacity = '0';
+
+                    const statsSection = mainHypeTrainContainer.querySelector('.stats-section');
+                    if (statsSection) statsSection.style.opacity = '0';
+
+                    const purpleFill = document.getElementById('purpleFill');
+                    if (purpleFill) purpleFill.style.height = '0%';
+
+                } else {
+                    console.warn("fadeOutCoreHypeTrainVisuals: Main .hype-train-container not found. Some elements may not fade as expected.");
+                    const purpleFillFallback = document.getElementById('purpleFill');
+                    if (purpleFillFallback) purpleFillFallback.style.height = '0%';
+                }
+                
+                const progressText = document.getElementById('progressText');
+                if (progressText) progressText.style.opacity = '0';
+                console.log('🎨 Core Hype Train visuals starting fade out...');
+            }
+
+            function startHypeTrainCountdown() {
+                if (hypeTrainTimerInterval) {
+                    clearInterval(hypeTrainTimerInterval);
+                }
+
+                if (!hypeTrainData.isActive) return;
+
+                hypeTrainTimerInterval = setInterval(() => {
+                    if (hypeTrainData.timeRemaining > 0) {
+                        hypeTrainData.timeRemaining--;
+                        updateHypeTrainDisplay(); // Update visual timer
+                        updateHypeTrainStatus();  // Update dashboard status
+                    } else {
+                        clearInterval(hypeTrainTimerInterval);
+                        hypeTrainTimerInterval = null;
+                        // Streamer.bot should send HypeTrainEnd, but as a fallback:
+                        if (hypeTrainData.isActive) {
+                            console.log('Timer reached 0, considering Hype Train ended.');
+                            // handleHypeTrainEnd({}); // Optionally trigger end if SB doesn't
+                        }
+                    }
+                }, 1000);
+            }
+
+            function updateHypeTrainDisplay() {
+                // In overlay mode, prioritize the main overlay elements
+                // When not in overlay mode, target the elements within the "Overlay" tab's black box preview.
+                const targetElements = isOverlayMode ? {
+                    container: document.getElementById('hypeTrainContainer'),
+                    progressText: document.getElementById('progressText'),
+                    purpleFill: document.getElementById('purpleFill'),
+                    levelNumber: document.getElementById('levelNumber'),
+                    timeRemaining: document.getElementById('timeRemaining'),
+                    // Elements for main overlay styling
+                    mainTrainIcon: document.querySelector('#hypeTrainContainer .train-icon'),
+                    mainTrainTitle: document.getElementById('trainTitle'),
+                    mainTrainSubtitle: document.getElementById('trainSubtitle'),
+                    mainTimeDisplaySection: document.querySelector('#hypeTrainContainer .time-remaining-display')
+                } : {
+                    // No specific visual elements to target on the "Overlay" tab anymore for a detailed preview
+                    // The function will still update data and dashboard status.
+                };
+
+                if (hypeTrainData.isActive) {
+                    console.log('📊 Updating hype train display - Active:', hypeTrainData);
+
+                    // Show displays
+                    if (isOverlayMode) {
+                        // First, ensure elements are part of the layout by setting their display property.
+                        if (targetElements.container) {
+                            targetElements.container.style.display = 'flex';
+                        }
+                        if (targetElements.progressText && currentSettings.showProgressText) {
+                            targetElements.progressText.style.display = 'block';
+                        } else if (targetElements.progressText) {
+                            // If it's not supposed to be shown, ensure it's not displayed.
+                            targetElements.progressText.style.display = 'none';
+                        }
+                        if (targetElements.purpleFill) {
+                            targetElements.purpleFill.style.display = 'block';
+                        }
+
+                        // After a very short delay, set opacity to 1 to trigger fade-in transitions.
+                        // This delay allows the browser to process the display changes first.
+                        setTimeout(() => {
+                            if (!hypeTrainData.isActive) return; // Re-check state in case it changed very rapidly
+
+                            if (targetElements.container) {
+                                targetElements.container.style.opacity = '1';
+                                // Also reset opacity for key children of the main container
+                                const trainHeader = targetElements.container.querySelector('.train-header');
+                                const levelDisplay = targetElements.container.querySelector('.level-display');
+                                const statsSection = targetElements.container.querySelector('.stats-section');
+                                if (trainHeader) trainHeader.style.opacity = '1';
+                                if (levelDisplay) levelDisplay.style.opacity = '1';
+                                if (statsSection) statsSection.style.opacity = '1';
+                            }
+                            if (targetElements.progressText && currentSettings.showProgressText) {
+                                targetElements.progressText.style.opacity = '1';
+                            }
+                        }, 20); // 20ms delay is usually sufficient
+                    }
+
+                    // Update purple fill
+                    if (targetElements.purpleFill) {
+                        targetElements.purpleFill.style.height = `${hypeTrainData.progress}%`;
+                        targetElements.purpleFill.classList.add('active');
+                        // display:block for purpleFill is handled above
+                    }
+
+                    // Update text
+                    if (isOverlayMode && targetElements.progressText) targetElements.progressText.textContent = `${hypeTrainData.progress}%`;
+                    if (isOverlayMode && targetElements.levelNumber) targetElements.levelNumber.textContent = hypeTrainData.level; // Main overlay span
+                    // No specific level text element to update for !isOverlayMode preview box
+
+                    // Format time
+                    const minutes = Math.floor(hypeTrainData.timeRemaining / 60);
+                    const seconds = hypeTrainData.timeRemaining % 60;
+                    const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    if (isOverlayMode && targetElements.timeRemaining) targetElements.timeRemaining.textContent = timeString;
+                    // No specific time text element to update for !isOverlayMode preview box
+
+                    // Apply all visual settings (font, color, size, position, visibility)
+                    // This logic will apply to EITHER the main overlay OR the "Overlay" tab's preview
+                    // based on `isOverlayMode` and the `targetElements` definition.
+
+                    const elementsToStyle = isOverlayMode ?
+                        { // Main overlay elements
+                            icon: targetElements.mainTrainIcon,
+                            title: targetElements.mainTrainTitle,
+                            subtitle: targetElements.mainTrainSubtitle,
+                            level: targetElements.levelNumber, // Actually the span inside .level-text
+                            time: targetElements.timeRemaining, // Actually the span inside .stat-value
+                            progressNum: targetElements.progressText,
+                            timeContainer: targetElements.mainTimeDisplaySection,
+                            // Sections for positioning (these are the actual main overlay sections)
+                            headerSection: document.querySelector('.train-header'),
+                            levelSection: document.querySelector('.level-display'), // Note: main overlay uses .level-display, not .level-text for this
+                            timeSection: document.querySelector('.stats-section')
+                        } :
+                        {
+                            // No specific elements to style for the removed "Overlay" tab preview
+                        };
+
+                    // Apply Font Family and Color
+                    if (isOverlayMode) { // Only apply detailed styling if in actual overlay mode
+                        // Apply Sizes (direct for main overlay) - Icon and Subtitle size now handled by CSS variables via applySettings
+                        //if (elementsToStyle.title) elementsToStyle.title.style.fontSize = currentSettings.titleSize + 'px';
+                        // if (elementsToStyle.icon) elementsToStyle.icon.style.fontSize = currentSettings.trainIconSize + 'px'; // Removed
+                        // if (elementsToStyle.subtitle) elementsToStyle.subtitle.style.fontSize = currentSettings.subtitleSize + 'px'; // Removed
+                        //if (elementsToStyle.level) elementsToStyle.level.style.fontSize = currentSettings.levelSize + 'px';
+                        //if (elementsToStyle.time) elementsToStyle.time.style.fontSize = currentSettings.timeSize + 'px';
+                        //if (elementsToStyle.progressNum) elementsToStyle.progressNum.style.fontSize = currentSettings.progressSize + 'px';
+
+                        // Apply Positions (direct for main overlay)
+                        // Positions are now primarily handled by applySettings() through direct style or CSS variables.
+                        // if (elementsToStyle.headerSection) elementsToStyle.headerSection.style.transform = `translateY(${currentSettings.headerOffsetY}px)`;
+                        // if (elementsToStyle.levelSection) elementsToStyle.levelSection.style.transform = `translateY(${currentSettings.levelOffsetY}px)`;
+                        // if (elementsToStyle.timeSection) elementsToStyle.timeSection.style.transform = `translateY(${currentSettings.timeOffsetY}px)`;
+                        // if (elementsToStyle.progressNum) elementsToStyle.progressNum.style.top = `${currentSettings.progressTextTop}%`; // Relies on CSS var --hype-progress-text-top
+
+                        // Apply Progress Bar Colors
+                        if (targetElements.purpleFill) {
+                            targetElements.purpleFill.style.background = `linear-gradient(180deg, ${currentSettings.progressColor1} 0%, ${currentSettings.progressColor2} 50%, ${currentSettings.progressColor3} 100%)`;
+                        }
+
+                        // Apply Visibility Toggles
+                        if (elementsToStyle.icon) elementsToStyle.icon.style.display = currentSettings.showTrainIcon ? 'block' : 'none';
+                        if (elementsToStyle.subtitle) elementsToStyle.subtitle.style.display = currentSettings.showSubtitle ? 'block' : 'none';
+                        // Progress text display is handled before the setTimeout, and opacity within it.
+                        if (elementsToStyle.progressNum) {
+                            // elementsToStyle.progressNum.style.display is set based on currentSettings.showProgressText earlier.
+                            // elementsToStyle.progressNum.style.opacity is set to 1 (if shown) or 0 (if hidden) inside the setTimeout.
+                        }
+                        if (elementsToStyle.timeContainer) elementsToStyle.timeContainer.style.display = currentSettings.showTimeRemaining ? 'block' : 'none';
+
+                        // Ensure end message is hidden when hype train is active
+                        const endMessageContainer = document.getElementById('hypeTrainEndMessageContainer');
+                        if (endMessageContainer) {
+                            endMessageContainer.style.opacity = '0';
+                            // Set display to none after transition if it was visible
+                            setTimeout(() => { if(endMessageContainer.style.opacity === '0') endMessageContainer.style.display = 'none'; }, 550); // Match CSS transition (0.5s) + small buffer
+                        }
+                        
+                        // Opacity for trainHeader, levelDisplay, statsSection, and progressText (if shown)
+                        // are now handled by the setTimeout block above to ensure smooth fade-in.
+
+                    }
+
+                    console.log(`📊 Display updated: Level ${hypeTrainData.level}, ${hypeTrainData.progress}%, ${hypeTrainData.timeRemaining}s remaining`);
+                    if (isOverlayMode) {
+                        console.log('🌐 OVERLAY MODE: Elements should be visible in OBS');
+                    }
+                } else {
+                    console.log('📊 Hype train not active, hiding display');
+                }
+            }
+
+            function hideHypeTrainDisplay(forceFullHide = false) {
+                const targetElements = isOverlayMode ? {
+                    container: document.getElementById('hypeTrainContainer'),
+                    progressText: document.getElementById('progressText'),
+                    purpleFill: document.getElementById('purpleFill')
+                } : {
+                    container: null // No direct container to hide in dashboard preview this way
+                    // No specific visual elements to hide on the "Overlay" tab anymore
+                };
+
+                // Only hide elements if in actual overlay mode or if the elements exist
+                if (isOverlayMode) {
+                    if (targetElements.container) {
+                        // Only hide the main container if forceFullHide is true (e.g. no end message)
+                        // Otherwise, it stays to host the end message.
+                        if (forceFullHide) {
+                            targetElements.container.style.opacity = '0';
+                        }
+                    }
+                    if (targetElements.progressText) {
+                        targetElements.progressText.style.setProperty('opacity', '0', 'important');
+                    }
+                    if (targetElements.purpleFill) {
+                        targetElements.purpleFill.style.height = '0%';
+                        targetElements.purpleFill.classList.remove('active');
+                    }
+
+                    // Also ensure the end message container is hidden and opacity set to 0
+                    if (forceFullHide) { // Only hide end message if it's a full hide
+                        const endMessageContainer = document.getElementById('hypeTrainEndMessageContainer');
+                        if (endMessageContainer) {
+                            endMessageContainer.style.opacity = '0';
+                            setTimeout(() => {
+                                if (endMessageContainer.style.opacity === '0') endMessageContainer.style.display = 'none';
+                            }, 500); // Hide after transition
+                        }
+                    }
+                }
+
+                console.log('📊 Display hidden');
+                if (isOverlayMode) {
+                    console.log('🌐 OVERLAY MODE: Elements hidden in OBS');
+                }
+            }
+
+            function updateHypeTrainStatus() {
+                // Update status display in dashboard
+                const elements = {
+                    active: document.getElementById('hypeTrain-active'),
+                    level: document.getElementById('hypeTrain-level'),
+                    progress: document.getElementById('hypeTrain-progress'),
+                    time: document.getElementById('hypeTrain-time')
+                };
+
+                if (elements.active) elements.active.textContent = hypeTrainData.isActive ? 'Yes' : 'No';
+                if (elements.level) elements.level.textContent = hypeTrainData.isActive ? hypeTrainData.level : '-';
+                if (elements.progress) elements.progress.textContent = hypeTrainData.isActive ? `${hypeTrainData.progress}%` : '-';
+                if (elements.time) {
+                    if (hypeTrainData.isActive && hypeTrainData.timeRemaining > 0) {
+                        const minutes = Math.floor(hypeTrainData.timeRemaining / 60);
+                        const seconds = hypeTrainData.timeRemaining % 60;
+                        elements.time.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    } else {
+                        elements.time.textContent = '-';
+                    }
+                }
+            }
+
+            // Test Functions
+            function testHypeTrain() {
+                console.log('🧪 Testing Hype Train...');
+                if (!isOverlayMode) {
+                    debugLog('Starting Hype Train test sequence...');
+                }
+
+                // Reset first
+                resetHypeTrain();
+
+                // Wait a moment then start
+                setTimeout(() => {
+                    // Simulate hype train start
+                    const testData = {
+                        level: 1,
+                        progress: 0,
+                        goal: 100,
+                        started_at: new Date().toISOString(),
+                        expires_at: new Date(Date.now() + 300000).toISOString()
+                    };
+
+                    handleHypeTrainStart(testData);
+
+                    // Simulate progress
+                    let progress = 0;
+                    const progressInterval = setInterval(() => {
+                        progress += 10;
+
+                        if (progress <= 100) {
+                            const progressData = {
+                                progress: progress,
+                                goal: 100,
+                                expires_at: new Date(Date.now() + 250000).toISOString()
+                            };
+                            handleHypeTrainProgress(progressData);
+
+                            // Level up at 100%
+                            if (progress === 100) {
+                                setTimeout(() => {
+                                    handleHypeTrainLevelUp({
+                                        level: 2,
+                                        progress: 0,
+                                        goal: 100
+                                    });
+                                }, 1000);
+                            }
+                        } else if (progress <= 150) {
+                            // Continue to 150% to show level 2 progress
+                            const progressData = {
+                                progress: progress - 100,
+                                goal: 100,
+                                expires_at: new Date(Date.now() + 200000).toISOString()
+                            };
+                            handleHypeTrainProgress(progressData);
+                        } else {
+                            clearInterval(progressInterval);
+                            setTimeout(() => {
+                                handleHypeTrainEnd({});
+                            }, 2000);
+                        }
+                    }, 1000);
+
+                    if (!isOverlayMode) {
+                        showNotification('🧪 Running test sequence...', 'warning');
+                    } else {
+                        console.log('🧪 OBS OVERLAY TEST: Hype train animation should be visible');
+                    }
+                }, 500);
+            }
+
+            function resetHypeTrain() {
+                hypeTrainData = {
+                    isActive: false,
+                    level: 1,
+                    progress: 0,
+                    timeRemaining: 0,
+                    goal: 100,
+                    current: 0
+                };
+                if (hypeTrainTimerInterval) clearInterval(hypeTrainTimerInterval); // Stop countdown
+
+                // Hide the main display elements fully
+                hideHypeTrainDisplay(true); // Pass true to ensure full hide including end message
+
+                // Explicitly hide end message container and reset core visuals to their initial state
+                const endMessageContainer = document.getElementById('hypeTrainEndMessageContainer');
+                if (endMessageContainer) {
+                    endMessageContainer.style.opacity = '0';
+                    setTimeout(() => { endMessageContainer.style.display = 'none'; }, 500);
+                }
+                document.getElementById('trainHeader')?.style.setProperty('opacity', '0');
+                document.getElementById('levelDisplay')?.style.setProperty('opacity', '0');
+                document.getElementById('statsSection')?.style.setProperty('opacity', '0');
+
+                updateHypeTrainStatus();
+                showNotification('🔄 Hype Train reset!', 'success');
+                debugLog('Hype Train reset to default state');
+            }
+
+            // Debug Functions
+            function debugLog(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                const logMessage = `[${timestamp}] ${message}`;
+                console.log(logMessage);
+
+                const debugEl = document.getElementById('debugMessages');
+                if (debugEl) {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'debug-message';
+                    messageDiv.textContent = logMessage;
+                    debugEl.appendChild(messageDiv);
+                    debugEl.scrollTop = debugEl.scrollHeight;
+                }
+            }
+
+            function clearDebugLog() {
+                const debugEl = document.getElementById('debugMessages');
+                if (debugEl) {
+                    debugEl.innerHTML = '';
+                }
+            }
+
+            function sendTestMessage() {
+                if (websocketConnection && websocketConnection.readyState === WebSocket.OPEN) {
+                    const testMessage = {
+                        request: 'GetEvents',
+                        id: 'hype-train-test'
+                    };
+                    websocketConnection.send(JSON.stringify(testMessage));
+                    debugLog('Test message sent: GetEvents');
+                    showNotification('Test message sent!', 'success');
+                } else {
+                    showNotification('Not connected to Streamer.bot!', 'error');
+                }
+            }
+
+            function debugSettings() {
+                debugLog('=== SETTINGS DEBUG ===');
+                debugLog('Current Settings: ' + JSON.stringify(currentSettings, null, 2));
+                debugLog('Default Settings: ' + JSON.stringify(defaultSettings, null, 2));
+                debugLog('Overlay Mode: ' + isOverlayMode);
+                debugLog('WebSocket State: ' + (websocketConnection ? websocketConnection.readyState : 'null'));
+                debugLog('Hype Train Data: ' + JSON.stringify(hypeTrainData, null, 2));
+                showNotification('Settings debug logged!', 'success');
+            }
+
+            // Add this TEMPORARY function to test URL generation:
+            function testURLGeneration() {
+                console.log('=== TESTING URL GENERATION ===');
+                console.log('Current settings:', currentSettings);
+                console.log('Default settings:', defaultSettings);
+
+                // Show differences
+                const differences = {};
+                Object.keys(currentSettings).forEach(key => {
+                    if (currentSettings[key] !== defaultSettings[key]) {
+                        differences[key] = {
+                            current: currentSettings[key],
+                            default: defaultSettings[key]
+                        };
+                    }
+                });
+
+                console.log('Settings differences:', differences);
+                console.log('Number of differences:', Object.keys(differences).length);
+
+                if (Object.keys(differences).length > 0) {
+                    // Try to generate URL
+                    const compactSettings = {};
+                    Object.keys(currentSettings).forEach(key => {
+                        if (currentSettings[key] !== defaultSettings[key]) {
+                            compactSettings[key] = currentSettings[key];
+                        }
+                    });
+
+                    console.log('Compact settings:', compactSettings);
+
+                    const json = JSON.stringify(compactSettings);
+                    console.log('JSON:', json);
+
+                    const compressed = LZString.compressToBase64(json);
+                    console.log('Compressed:', compressed);
+
+                    const testURL = `${window.location.origin}${window.location.pathname}?overlay=true&settings=${compressed}`;
+                    console.log('Generated URL:', testURL);
+
+                    // Test decompression
+                    const decompressed = LZString.decompressFromBase64(compressed);
+                    console.log('Decompressed test:', decompressed);
+
+                } else {
+                    console.log('NO DIFFERENCES FOUND!');
+                }
+            }
+
+            function debugSettingsFlow() {
+                console.log('=== SETTINGS DEBUG ===');
+                console.log('1. Current Settings:', currentSettings);
+
+                // Check what's actually being saved
+                const testSettings = {
+                    fontFamily: document.getElementById('fontFamily')?.value,
+                    titleSize: parseInt(document.getElementById('titleSize')?.value),
+                    subtitleSize: parseInt(document.getElementById('subtitleSize')?.value),
+                    trainIconSize: parseInt(document.getElementById('trainIconSize')?.value),
+                    fontColor: document.getElementById('fontColor')?.value
+                };
+                console.log('2. Form Values:', testSettings);
+
+                // Check CSS variables
+                const root = document.documentElement;
+                const computedStyle = getComputedStyle(root);
+                console.log('3. CSS Variables:');
+                console.log('   --hype-font-family:', computedStyle.getPropertyValue('--hype-font-family'));
+                console.log('   --hype-title-size:', computedStyle.getPropertyValue('--hype-title-size'));
+                console.log('   --hype-subtitle-size:', computedStyle.getPropertyValue('--hype-subtitle-size'));
+                console.log('   --hype-train-icon-size:', computedStyle.getPropertyValue('--hype-train-icon-size'));
+                console.log('   --hype-font-color:', computedStyle.getPropertyValue('--hype-font-color'));
+
+                // Test URL generation
+                const compactSettings = {};
+                Object.keys(currentSettings).forEach(key => {
+                    if (currentSettings[key] !== defaultSettings[key]) {
+                        compactSettings[key] = currentSettings[key];
+                    }
+                });
+                console.log('4. Compact Settings for URL:', compactSettings);
+
+                if (Object.keys(compactSettings).length === 0) {
+                    console.warn('⚠️ No settings differences found - URL will be empty!');
+                }
+            }
+
+            // Notifications
+            // ADD this function to force-load settings in overlay mode:
+            function forceLoadSettingsFromURL() {
+                if (!isOverlayMode) return;
+
+                console.log('🔧 Force loading settings in overlay mode...');
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const settingsParam = urlParams.get('settings');
+
+                if (!settingsParam) {
+                    console.log('🔧 No settings in URL to force load');
+                    return;
+                }
+
+                try {
+                    const decompressed = LZString.decompressFromBase64(settingsParam);
+                    if (decompressed && decompressed.trim() !== "") {
+                        const parsed = JSON.parse(decompressed);
+                        currentSettings = { ...defaultSettings, ...parsed };
+
+                        console.log('🔧 ✅ Force loaded settings:', currentSettings);
+                        console.log('🔧 Settings count:', Object.keys(parsed).length);
+
+                        // Apply the settings immediately
+                        applySettings();
+
+                        console.log('🔧 ✅ Settings force-applied');
+                        return true;
+                    }
+                } catch (error) {
+                    console.error('🔧 ❌ Force load failed:', error);
+                }
+
+                return false;
+            }
+
+            // Notifications
+            function showNotification(message, type = 'success') {
+                if (isOverlayMode) return; // Don't show notifications in overlay mode
+
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'times-circle'}"></i>
+                    ${message}
+                </div>
+            `;
+
+                document.body.appendChild(notification);
+                setTimeout(() => notification.classList.add('show'), 100);
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (event) => {
+                if (event.ctrlKey) {
+                    switch (event.key.toLowerCase()) {
+                        case 't':
+                            event.preventDefault();
+                            testHypeTrain();
+                            break;
+                        case 'r':
+                            event.preventDefault();
+                            resetHypeTrain();
+                            break;
+                        case 'd':
+                            event.preventDefault();
+                            if (isOverlayMode) {
+                                toggleOBSDebug();
+                            } else {
+                                clearDebugLog();
+                            }
+                            break;
+                        case 'u':
+                            if (isOverlayMode) {
+                                event.preventDefault();
+                                console.log('🔗 Current URL:', window.location.href);
+                                console.log('📋 Copy this URL for OBS:', window.location.href);
+                            }
+                            break;
+                    }
+                }
+            });
+
+            // OBS Debug Functions
+            function toggleOBSDebug() {
+                const debugOverlay = document.getElementById('obsDebugOverlay');
+                if (debugOverlay) {
+                    if (debugOverlay.style.display === 'none' || !debugOverlay.style.display) {
+                        debugOverlay.style.display = 'block';
+                        updateOBSDebugInfo();
+                        // Auto-update debug info
+                        if (window.obsDebugInterval) clearInterval(window.obsDebugInterval);
+                        window.obsDebugInterval = setInterval(updateOBSDebugInfo, 2000);
+                    } else {
+                        debugOverlay.style.display = 'none';
+                        if (window.obsDebugInterval) {
+                            clearInterval(window.obsDebugInterval);
+                            window.obsDebugInterval = null;
+                        }
+                    }
+                }
+            }
+
+            function updateOBSDebugInfo() {
+                const debugInfo = document.getElementById('obsDebugInfo');
+                if (debugInfo && isOverlayMode) {
+                    const wsStatus = websocketConnection ?
+                        (websocketConnection.readyState === WebSocket.OPEN ? 'Connected' : 'Disconnected') :
+                        'Not Connected';
+
+                    debugInfo.innerHTML = `
+                    Mode: Overlay<br>
+                    WebSocket: ${wsStatus}<br>
+                    Hype Train: ${hypeTrainData.isActive ? 'Active' : 'Inactive'}<br>
+                    Header Offset: ${currentSettings.headerOffsetY}px<br>
+                    Level: ${hypeTrainData.level}<br>
+                    Progress: ${hypeTrainData.progress}%<br>
+                    Time: ${hypeTrainData.timeRemaining}s<br>
+                    Settings: ${Object.keys(currentSettings).filter(k => currentSettings[k] !== defaultSettings[k]).length} custom<br>
+                    <small>Ctrl+D=hide Ctrl+T=test Ctrl+U=url</small>
+                `;
+                }
+            }
+
+            // Enhanced connection function for overlay mode
+            function connectStreamerBot() {
+                let server, port;
+
+                if (isOverlayMode) {
+                    // In overlay mode, ALWAYS use the settings loaded from URL (or defaults if URL had none)
+                    server = currentSettings.websocketServer;
+                    port = currentSettings.websocketPort;
+                    if (!server || !port) {
+                        console.error("Overlay mode: WebSocket server or port is missing from currentSettings. Cannot connect.", currentSettings);
+                        // Attempt to force load settings if they are critically missing, then re-check
+                        // This is a fallback, as DOMContentLoaded should have handled this.
+                        if (forceLoadSettingsFromURL()) {
+                             server = currentSettings.websocketServer;
+                             port = currentSettings.websocketPort;
+                        }
+                        if (!server || !port) {
+                            console.error("Overlay mode: Still missing server/port after force load attempt. Giving up.");
+                            return; 
+                        }
+                    }
+                } else {
+                    // In dashboard mode, use the input fields on the dashboard tab
+                    server = document.getElementById('serverIP')?.value;
+                    port = document.getElementById('serverPort')?.value;
+
+                    // Update currentSettings to reflect what the dashboard is trying to connect to.
+                    // This is useful if the user changes IP/Port on dashboard and hits connect.
+                    currentSettings.websocketServer = server;
+                    currentSettings.websocketPort = port;
+                }
+
+                if (!server || !port) {
+                    console.error("Cannot connect: Server IP or Port is undefined or empty.");
+                    if (!isOverlayMode) {
+                        showNotification('Server IP or Port not set!', 'error');
+                    }
+                    return;
+                }
+
+                if (websocketConnection && websocketConnection.readyState === WebSocket.OPEN) {
+                    // Check if trying to connect to the *same* server and port
+                    try {
+                        const currentWsUrl = new URL(websocketConnection.url);
+                        if (currentWsUrl.hostname === server && currentWsUrl.port === port) {
+                            console.log('Already connected to this server and port.');
+                            if (!isOverlayMode) updateConnectionStatus('connected', 'Already Connected');
+                            return; // Already connected to the target
+                        } else {
+                            console.log('Switching connection to new server/port. Closing existing connection.');
+                            websocketConnection.close(); // Close old connection before opening new
+                        }
+                    } catch (e) {
+                        console.warn("Error checking existing WebSocket URL, proceeding to connect:", e);
+                        // If URL is invalid for some reason, just try to close and reconnect
+                        websocketConnection.close();
+                    }
+                }
+                
+                // Determine protocol based on current page protocol
+                const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+                const wsUrl = `${protocol}${server}:${port}/`;
+                console.log('Connecting to Streamer.bot:', wsUrl);
+
+                if (!isOverlayMode) {
+                    updateConnectionStatus('connecting', 'Connecting...');
+                }
+
+                try {
+                    websocketConnection = new WebSocket(wsUrl);
+
+                    websocketConnection.onopen = () => {
+                        console.log('✅ Connected to Streamer.bot WebSocket!');
+                        reconnectAttempts = 0;
+                        if (!isOverlayMode) {
+                            updateConnectionStatus('connected', 'Connected');
+                            showNotification('Connected to Streamer.bot!', 'success');
+                        } else {
+                            console.log('🌐 OVERLAY MODE: Connected to Streamer.bot for live updates');
+                        }
+                    };
+
+                    websocketConnection.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            console.log('📨 Received from Streamer.bot:', data);
+                            if (!isOverlayMode) {
+                                debugLog('Received: ' + JSON.stringify(data, null, 2));
+                            }
+                            handleStreamerBotMessage(data);
+                        } catch (e) {
+                            console.error('Error parsing WebSocket message:', e);
+                            if (!isOverlayMode) {
+                                debugLog('Parse error: ' + e.message);
+                            }
+                        }
+                    };
+
+                    websocketConnection.onerror = (error) => {
+                        console.error('WebSocket error:', error);
+                        if (!isOverlayMode) {
+                            updateConnectionStatus('error', 'Connection error');
+                            showNotification('Connection error!', 'error');
+                        }
+                    };
+
+                    websocketConnection.onclose = (event) => {
+                        console.log('WebSocket closed:', event.code);
+                        if (!isOverlayMode) {
+                            updateConnectionStatus('disconnected', 'Disconnected');
+                        }
+
+                        // Auto-reconnect in overlay mode
+                        if (isOverlayMode && currentSettings.autoReconnect && reconnectAttempts < maxReconnectAttempts) {
+                            reconnectAttempts++;
+                            console.log(`🔄 Overlay Mode: Reconnecting... Attempt ${reconnectAttempts}/${maxReconnectAttempts}`);
+                            setTimeout(() => connectStreamerBot(), 5000);
+                        }
+                    };
+
+                } catch (error) {
+                    console.error('Failed to create WebSocket connection:', error);
+                    if (!isOverlayMode) {
+                        updateConnectionStatus('error', 'Connection failed');
+                        showNotification('Failed to connect!', 'error');
+                    }
+                }
+            }
+
+            // Function to reset position settings to default
+            function resetPositionSettings() {
+                document.getElementById('headerOffsetY').value = defaultSettings.headerOffsetY;
+                document.getElementById('levelOffsetY').value = defaultSettings.levelOffsetY;
+                document.getElementById('timeOffsetY').value = defaultSettings.timeOffsetY;
+                document.getElementById('progressTextTop').value = defaultSettings.progressTextTop;
+                // Note: backgroundOpacity is not reset here, it's part of general appearance.
+
+                updateRangeDisplays(); // Update the displayed values
+                updatePreview(); // Update the live preview
+                showNotification('Position settings reset to default!', 'success');
+            }
+
+    </script>
+</body>
+
+</html>
