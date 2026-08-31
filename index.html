@@ -2543,7 +2543,8 @@
                     request: 'Subscribe',
                     id: 'hype-train-manager',
                     events: {
-                        'Twitch': ['HypeTrainStart', 'HypeTrainUpdate', 'HypeTrainLevelUp', 'HypeTrainEnd'] // Changed HypeTrainProgress to HypeTrainUpdate
+                        'Twitch': ['HypeTrainStart', 'HypeTrainUpdate', 'HypeTrainLevelUp', 'HypeTrainEnd'], // Changed HypeTrainProgress to HypeTrainUpdate
+                        'General': ['Custom'] // Needed to receive CPH.WebsocketBroadcastJson broadcasts
                     }
                 };
 
