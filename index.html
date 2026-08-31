@@ -2462,6 +2462,47 @@
                     return;
                 }
 
+                // Handle Custom events broadcast from Streamer.bot C# actions (CPH.WebsocketBroadcastJson)
+                if (data.event && data.event.source === 'General' && data.event.type === 'Custom' && data.data) {
+                    // The C# payload is delivered inside data.data. It may be wrapped as
+                    // {event:{source:'Twitch',type:'...'}, data:{...}} or be the payload directly.
+                    let payload = data.data;
+                    if (payload && typeof payload === 'string') {
+                        try { payload = JSON.parse(payload); } catch (e) { payload = null; }
+                    }
+                    // Find an embedded Twitch-style event (event.source === 'Twitch') within the custom payload
+                    let customEvent = null;
+                    let customData = null;
+                    if (payload && payload.event && payload.event.source === 'Twitch') {
+                        customEvent = payload.event;
+                        customData = payload.data || {};
+                    } else if (payload && payload.eventType) {
+                        customEvent = { source: 'Twitch', type: payload.eventType };
+                        customData = payload.data || payload;
+                    }
+                    if (customEvent && customData) {
+                        const eventType = customEvent.type;
+                        console.log(`🎯 Processing Twitch event (custom broadcast): ${eventType}`);
+                        debugLog(`Hype Train Event (custom broadcast): ${eventType}`);
+                        switch (eventType) {
+                            case 'HypeTrainStart':
+                                handleHypeTrainStart(customData);
+                                break;
+                            case 'HypeTrainProgress':
+                            case 'HypeTrainUpdate':
+                                handleHypeTrainProgress(customData);
+                                break;
+                            case 'HypeTrainLevelUp':
+                                handleHypeTrainLevelUp(customData);
+                                break;
+                            case 'HypeTrainEnd':
+                                handleHypeTrainEnd(customData);
+                                break;
+                        }
+                    }
+                    return;
+                }
+
                 // Handle Hype Train events
                 if (data.event && data.event.source === 'Twitch' && data.data) {
                     const eventType = data.event.type;
@@ -2488,6 +2529,15 @@
                 }
             }
 
+            function hypeProgress(data) {
+                data = data || {};
+                let p = data.progress != null ? data.progress : data.progressPoints;
+                let g = data.goal != null ? data.goal : data.goalPoints;
+                p = Number(p) || 0;
+                g = Number(g) || 0;
+                return { progress: p, goal: g };
+            }
+
             function subscribeToEvents() {
                 const subscribeMessage = {
                     request: 'Subscribe',
@@ -2511,7 +2561,8 @@
 
                 hypeTrainData.isActive = true;
                 hypeTrainData.level = data.level || 1;
-                hypeTrainData.progress = Math.round((data.progress / data.goal) * 100) || 0;
+                var hProg = hypeProgress(data);
+                hypeTrainData.progress = hProg.goal > 0 ? Math.round((hProg.progress / hProg.goal) * 100) : 0;
                 // Calculate initial timeRemaining based on start and expiry
                 hypeTrainData.timeRemaining = Math.round((new Date(data.expires_at) - new Date(data.started_at)) / 1000) || 300;
 
@@ -2527,7 +2578,8 @@
                 debugLog('Hype Train PROGRESS - ' + Math.round((data.progress / data.goal) * 100) + '%');
 
                 if (hypeTrainData.isActive) {
-                    hypeTrainData.progress = Math.round((data.progress / data.goal) * 100) || 0;
+                    var hProg = hypeProgress(data);
+                    hypeTrainData.progress = hProg.goal > 0 ? Math.round((hProg.progress / hProg.goal) * 100) : 0;
                     // Resync timeRemaining with the event's expires_at
                     hypeTrainData.timeRemaining = Math.round((new Date(data.expires_at) - Date.now()) / 1000) || 0;
                     updateHypeTrainDisplay();
@@ -2541,7 +2593,8 @@
 
                 if (hypeTrainData.isActive) {
                     hypeTrainData.level = data.level || hypeTrainData.level + 1;
-                    hypeTrainData.progress = Math.round((data.progress / data.goal) * 100) || 0;
+                    var hProg = hypeProgress(data);
+                    hypeTrainData.progress = hProg.goal > 0 ? Math.round((hProg.progress / hProg.goal) * 100) : 0;
                     // Resync timeRemaining if expires_at is provided (level ups often extend time)
                     if (data.expires_at) {
                         hypeTrainData.timeRemaining = Math.round((new Date(data.expires_at) - Date.now()) / 1000) || 0;
