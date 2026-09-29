@@ -1564,7 +1564,68 @@
         let settingsChannel = null; // BroadcastChannel for live updates
         let reconnectAttempts = 0;
         let hypeTrainTimerInterval = null; // For the countdown timer
-        const maxReconnectAttempts = 5;
+        const maxReconnectAttempts = 1000; // Effectively unlimited - was 5 (gave up after ~25s)
+
+        // --- Connection liveness tracking (overlay resilience) ---
+        // Streamer.bot sends nothing in reply to a Subscribe request, so liveness can only be
+        // inferred from inbound traffic. A browser also cannot send protocol-level WebSocket pings.
+        // These track the last frame we saw so the watchdog can spot dead/zombie sockets, which
+        // never fire 'onclose' and therefore never reach the reconnect path in connectStreamerBot().
+        const HYPE_WATCHDOG_INTERVAL = 10000; // check the socket every 10s
+        const HYPE_HELLO_TIMEOUT = 15000;     // socket open but no Hello/subscribe reply in 15s => broken
+        const HYPE_STALE_ACTIVE = 90000;      // train on screen but no update for 90s => dead
+        const HYPE_STALE_IDLE = 600000;       // nothing happening for 10min => recycle zombie socket
+        let hypeOpenedAt = 0;                 // when the current socket opened (0 if never opened)
+        let hypeConnectStartedAt = 0;         // when new WebSocket() was last called
+        let hypeLastMessageAt = Date.now();   // last frame received from Streamer.bot
+        let hypeLastHelloAt = 0;              // last Streamer.bot 'Hello' (i.e. proven working pipe)
+        let hypeReconnectTimer = null;        // pending reconnect timeout
+
+        function hypeMarkAlive() {
+            hypeLastMessageAt = Date.now();
+        }
+
+        // Backoff that keeps retrying forever but stops hammering a server that is down.
+        function hypeReconnectDelay() {
+            reconnectAttempts++;
+            const d = 5000 * Math.pow(1.5, Math.min(reconnectAttempts - 1, 8)); // 5s -> ~64s
+            return Math.min(d, 60000);
+        }
+
+        // Force a brand new socket. websocketConnection MUST be nulled first, otherwise
+        // connectStreamerBot() sees the stale socket still reporting OPEN for the same
+        // host:port and returns early with "Already connected" without reconnecting.
+        function hypeForceReconnect(reason) {
+            if (hypeReconnectTimer) { clearTimeout(hypeReconnectTimer); hypeReconnectTimer = null; }
+            const stale = websocketConnection;
+            websocketConnection = null;
+            try {
+                if (stale) {
+                    stale.onopen = null; stale.onmessage = null;
+                    stale.onerror = null; stale.onclose = null;
+                    stale.close();
+                }
+            } catch (e) { /* socket already torn down */ }
+            console.warn('[Hype] Watchdog: ' + reason + ' - forcing reconnect');
+            try {
+                connectStreamerBot();
+            } catch (e) {
+                console.error('[Hype] Reconnect attempt threw, will retry:', e);
+                scheduleHypeReconnect();
+            }
+        }
+
+        function scheduleHypeReconnect() {
+            if (!isOverlayMode || !currentSettings.autoReconnect) return;
+            if (hypeReconnectTimer) return; // already pending
+            if (reconnectAttempts >= maxReconnectAttempts) return;
+            const delay = hypeReconnectDelay();
+            console.log(`[Hype] Reconnecting in ${Math.round(delay / 1000)}s (attempt ${reconnectAttempts})`);
+            hypeReconnectTimer = setTimeout(() => {
+                hypeReconnectTimer = null;
+                connectStreamerBot();
+            }, delay);
+        }
 
         // Hype Train State
         let hypeTrainData = {
@@ -2451,6 +2512,7 @@
                 if (data.request === 'Hello') {
                     console.log('👋 Hello from Streamer.bot:', data.info);
                     debugLog('Hello received: ' + data.info.name + ' v' + data.info.version);
+                    hypeLastHelloAt = Date.now();
                     subscribeToEvents();
                     return;
                 }
@@ -3377,10 +3439,13 @@
 
                 try {
                     websocketConnection = new WebSocket(wsUrl);
+                    hypeConnectStartedAt = Date.now();
 
                     websocketConnection.onopen = () => {
                         console.log('✅ Connected to Streamer.bot WebSocket!');
                         reconnectAttempts = 0;
+                        hypeOpenedAt = Date.now();
+                        hypeMarkAlive();
                         if (!isOverlayMode) {
                             updateConnectionStatus('connected', 'Connected');
                             showNotification('Connected to Streamer.bot!', 'success');
@@ -3390,6 +3455,7 @@
                     };
 
                     websocketConnection.onmessage = (event) => {
+                        hypeMarkAlive();
                         try {
                             const data = JSON.parse(event.data);
                             console.log('📨 Received from Streamer.bot:', data);
@@ -3419,11 +3485,9 @@
                             updateConnectionStatus('disconnected', 'Disconnected');
                         }
 
-                        // Auto-reconnect in overlay mode
-                        if (isOverlayMode && currentSettings.autoReconnect && reconnectAttempts < maxReconnectAttempts) {
-                            reconnectAttempts++;
-                            console.log(`🔄 Overlay Mode: Reconnecting... Attempt ${reconnectAttempts}/${maxReconnectAttempts}`);
-                            setTimeout(() => connectStreamerBot(), 5000);
+                        // Auto-reconnect in overlay mode (unlimited attempts, backoff)
+                        if (isOverlayMode && currentSettings.autoReconnect) {
+                            scheduleHypeReconnect();
                         }
                     };
 
@@ -3448,6 +3512,56 @@
                 updatePreview(); // Update the live preview
                 showNotification('Position settings reset to default!', 'success');
             }
+
+            // Keepalive watchdog.
+            // A WebSocket to a process that was killed can stay in state OPEN forever without ever
+            // firing 'onclose' (no FIN/RST is delivered to a sleeping/hibernating host), which leaves
+            // the overlay frozen until it is manually refreshed. Browsers cannot send protocol-level
+            // pings and Streamer.bot does not answer Subscribe requests, so liveness is inferred
+            // from inbound frames. This recovers automatically within one interval.
+            setInterval(() => {
+                if (!isOverlayMode) return;
+                const ws = websocketConnection;
+                const now = Date.now();
+
+                if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+                    // onclose already scheduled a retry; only step in if it didn't.
+                    if (!hypeReconnectTimer && reconnectAttempts < maxReconnectAttempts) {
+                        console.warn('[Hype] Watchdog: socket ' + (ws ? 'closed' : 'missing') + ' - reconnecting');
+                        scheduleHypeReconnect();
+                    }
+                    return;
+                }
+
+                if (ws.readyState === WebSocket.CONNECTING) {
+                    // Stuck in CONNECTING (e.g. server down on first load). Pace retries off the last
+                    // connect attempt rather than every tick, so a down server backs off instead of
+                    // getting hammered with a new socket each interval.
+                    if (now - hypeConnectStartedAt > HYPE_HELLO_TIMEOUT) {
+                        hypeForceReconnect('stuck CONNECTING for ' + Math.round((now - hypeConnectStartedAt) / 1000) + 's');
+                    }
+                    return;
+                }
+
+                if (ws.readyState === WebSocket.OPEN) {
+                    // Opened but Streamer.bot never said Hello => half-open / broken handshake.
+                    if (hypeOpenedAt > 0 && hypeLastHelloAt < hypeOpenedAt && now - hypeOpenedAt > HYPE_HELLO_TIMEOUT) {
+                        hypeForceReconnect('open but no Hello from Streamer.bot');
+                        return;
+                    }
+                    // A running hype train emits updates roughly every 10-30s. Silence well past that
+                    // means the pipe is dead, so recycle rather than leave a frozen 0:00 on screen.
+                    if (hypeTrainData && hypeTrainData.isActive && now - hypeLastMessageAt > HYPE_STALE_ACTIVE) {
+                        hypeForceReconnect('train active but no update for ' + Math.round(HYPE_STALE_ACTIVE / 1000) + 's');
+                        return;
+                    }
+                    // Idle recycling: with no events subscribed there is no traffic to detect a zombie
+                    // socket, so periodically rebuild the connection. Cheap, and only while idle.
+                    if (now - hypeLastMessageAt > HYPE_STALE_IDLE) {
+                        hypeForceReconnect('idle ' + Math.round(HYPE_STALE_IDLE / 1000) + 's - recycling connection');
+                    }
+                }
+            }, HYPE_WATCHDOG_INTERVAL);
 
     </script>
 </body>
